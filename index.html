@@ -61,7 +61,7 @@
           <div id="loading-hint">entering the forest…</div>
           <div id="loading-tips">
             <div class="loading-tip desktop-only">Switch to desktop for best experience</div>
-            <div class="loading-tip">Scroll to explore the forest</div>
+            <div class="loading-tip">Use W A S D keys to move through the forest</div>
           </div>
         </div>
       </div>
@@ -90,6 +90,19 @@
             <span>Explore the Forest</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
+        </div>
+
+        <!-- WASD hint on hero -->
+        <div class="wasd-hint desktop-only" id="hero-wasd">
+          <div class="wasd-row">
+            <kbd>W</kbd>
+          </div>
+          <div class="wasd-row">
+            <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+          </div>
+          <div class="wasd-labels">
+            <span>Forward &nbsp;·&nbsp; Back &nbsp;·&nbsp; Left &nbsp;·&nbsp; Right</span>
+          </div>
         </div>
       </div>
 
@@ -137,11 +150,20 @@
           </div>
         </div>
 
-        <!-- Main panel -->
-        <div id="scroll-hint">
-          <div class="scroll-hint-text">Scroll to explore</div>
-          <div class="scroll-arrow">↓</div>
+        <!-- WASD hint on main scene -->
+        <div class="wasd-hint desktop-only" id="main-wasd">
+          <div class="wasd-row">
+            <kbd>W</kbd>
+          </div>
+          <div class="wasd-row">
+            <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+          </div>
+          <div class="wasd-labels">
+            <span>Forward &nbsp;·&nbsp; Back &nbsp;·&nbsp; Left &nbsp;·&nbsp; Right</span>
+          </div>
         </div>
+
+        <!-- Main panel -->
         <div id="panel" class="hidden">
           <button id="panel-close">✕</button>
           <div id="panel-content"></div>
