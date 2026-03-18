@@ -617,9 +617,9 @@ body, html {
 }
 
 #hero-wasd .wasd-labels span {
-  color: #0a2206;
+  color: #030f01;
   font-weight: 700;
-  text-shadow: 0 1px 4px rgba(255,255,255,0.5);
+  text-shadow: none;
 }
 
 .wasd-labels {
@@ -645,13 +645,13 @@ body, html {
   max-height: 85vh;
   overflow-y: auto;
   overflow-x: hidden;
-  background: rgba(8,25,12,0.25);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(168,240,192,0.2);
-  border-radius: 16px;
-  padding: 48px;
+  background: url('/images/BG.png') center center / 100% 100% no-repeat;
+  backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  padding: 60px 80px 60px 100px;
   z-index: 200;
-  color: white;
+  color: #2a1a00;
   scrollbar-width: none;
 }
 
@@ -666,26 +666,26 @@ body, html {
   top: 16px; right: 20px;
   background: none;
   border: none;
-  color: rgba(168,240,192,0.6);
+  color: rgba(80,40,0,0.6);
   font-size: 20px;
   cursor: pointer;
   transition: color 0.2s;
 }
 
-#panel-close:hover { color: white; }
+#panel-close:hover { color: #2a1200; }
 
 #panel h2 {
   font-size: clamp(20px, 4vw, 30px);
   font-weight: 400;
-  color: white;
+  color: #2a1200;
   margin-bottom: 8px;
   letter-spacing: 0.08em;
   font-family: 'Cinzel Decorative', serif;
 }
 
-.panel-divider { width: 40px; height: 1px; background: rgba(168,240,192,0.4); margin-bottom: 28px; }
+.panel-divider { width: 40px; height: 1px; background: rgba(80,40,0,0.4); margin-bottom: 28px; }
 
-.panel-body { color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1.8; }
+.panel-body { color: #3a2200; font-size: 16px; line-height: 1.8; }
 .panel-body p { margin-bottom: 12px; }
 .panel-body a { color: rgba(168,240,192,0.8); text-decoration: none; }
 
