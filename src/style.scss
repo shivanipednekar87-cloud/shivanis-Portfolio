@@ -372,7 +372,7 @@ body, html {
   padding: 8px 16px;
   border-radius: 30px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 15px;
   font-family: 'Cormorant Garamond', serif;
   letter-spacing: 0.08em;
   transition: all 0.25s ease;
@@ -450,9 +450,8 @@ body, html {
   right: 0;
   background: rgba(8,22,10,0.92);
   backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(168,240,192,0.2);
-  border-radius: 16px;
+  border: none;
+  border-radius: 0;
   padding: 8px;
   min-width: 180px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.4);
@@ -546,7 +545,7 @@ body, html {
   border-radius: 5px;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   color: rgba(168,240,192,0.9);
 }
 
@@ -643,13 +642,12 @@ body, html {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80vw;
-  height: 80vh;
-  max-height: 80vh;
+  width: 92vw;
+  height: 88vh;
+  max-height: 88vh;
   overflow-y: auto;
   overflow-x: hidden;
   background: url("/images/BG.png") center center / 100% 100% no-repeat;
-  backdrop-filter: blur(24px);
   border: 1px solid rgba(168,240,192,0.2);
   border-radius: 16px;
   padding: 48px;
