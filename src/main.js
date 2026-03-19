@@ -438,7 +438,7 @@ const sections = {
   contact: {
     title: 'Contact',
     content: `
-      <div style="padding:0 20px;">
+      <div style="padding:0 60px 0 80px;">
         <p style="color:#111;font-size:14px;line-height:1.9;margin-bottom:24px;font-family:'Cinzel',serif;">
           I'm seeking opportunities in animation, film, and creative production.
         </p>
@@ -447,23 +447,23 @@ const sections = {
             type="text"
             id="contact-name"
             placeholder="Your Name"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:14px;outline:none;width:100%;"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;"
           />
           <input
             type="email"
             id="contact-email"
             placeholder="Your Email"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:14px;outline:none;width:100%;"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;"
           />
           <textarea
             id="contact-message"
             placeholder="Your Message"
             rows="3"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:14px;outline:none;width:100%;resize:none;"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;resize:none;"
           ></textarea>
           <button
             onclick="sendContact()"
-            style="background:transparent;border:1px solid rgba(0,0,0,0.35);color:#111;padding:12px 36px;border-radius:30px;font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.2em;cursor:pointer;align-self:center;"
+            style="background:transparent;border:1px solid rgba(0, 0, 0, 0.57);color:#111;padding:12px 36px;border-radius:30px;font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.2em;cursor:pointer;align-self:center;"
           >
             SEND MESSAGE
           </button>
