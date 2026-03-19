@@ -1,5 +1,30 @@
 import { Application } from '@splinetool/runtime'
 
+// PRELOAD MAIN SCENE IN BACKGROUND AS SOON AS HERO LOADS
+let preloadedMainApp = null
+let preloadComplete = false
+
+function preloadMainScene() {
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.style.display = 'none'
+  tempCanvas.width = 1
+  tempCanvas.height = 1
+  document.body.appendChild(tempCanvas)
+
+  preloadedMainApp = new Application(tempCanvas)
+  preloadedMainApp
+    .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
+    .then(() => {
+      preloadComplete = true
+      console.log('Main scene preloaded!')
+    })
+    .catch((err) => {
+      console.warn('Preload failed, will load on demand:', err)
+      preloadedMainApp = null
+      preloadComplete = false
+    })
+}
+
 // ZOOM TRANSITION
 function zoomWipeTransition(outEl, inEl, onDone) {
   inEl.style.display = ''
@@ -107,6 +132,8 @@ heroApp
         setTimeout(() => {
           heroLoadingOverlay.style.display = 'none'
           showInstructionModal()
+          // START PRELOADING MAIN SCENE IN BACKGROUND
+          preloadMainScene()
         }, 900)
       }
     }, 400)
@@ -123,13 +150,33 @@ function enterForest() {
 
   hideInstructionModal()
 
-  if (exploreBtn) {
-    exploreBtn.disabled = true
-    exploreBtn.style.display = 'none'
-  }
-
   if (heroLoadingWrap) heroLoadingWrap.style.display = 'flex'
 
+  // If preload already done, transfer to real canvas instantly
+  if (preloadComplete && preloadedMainApp) {
+    const mainCanvas = document.getElementById('spline-forest')
+
+    if (heroLoadingBar) heroLoadingBar.style.width = '100%'
+    if (heroLoadingPercent) heroLoadingPercent.textContent = '100%'
+
+    // Load fresh on real canvas using preloaded data
+    mainApp = new Application(mainCanvas)
+    mainApp
+      .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
+      .then(() => {
+        attachMainEvents()
+        setTimeout(() => {
+          zoomWipeTransition(heroScreen, mainScene)
+        }, 200)
+      })
+      .catch((err) => {
+        console.error('Failed to load main scene:', err)
+        handleEnterError()
+      })
+    return
+  }
+
+  // Fallback — load normally with progress bar
   let progress = 0
   const timer = setInterval(() => {
     progress = Math.min(progress + Math.random() * 8, 90)
@@ -141,23 +188,12 @@ function enterForest() {
   mainApp = new Application(mainCanvas)
 
   mainApp
-    .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode?v=' + Date.now())
+    .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
     .then(() => {
       clearInterval(timer)
       if (heroLoadingBar) heroLoadingBar.style.width = '100%'
       if (heroLoadingPercent) heroLoadingPercent.textContent = '100%'
-
-      mainApp.addEventListener('mouseUp', (e) => {
-        const name = e?.target?.name?.toLowerCase()
-        if (!name) return
-        if (name.includes('about')) openPanel('about')
-        else if (name.includes('contact')) openPanel('contact')
-        else if (name.includes('resume')) openPanel('resume')
-        else if (name.includes('portfolio')) openPanel('portfolio')
-        else if (name.includes('short film') || name.includes('film')) openPanel('films')
-        else if (name.includes('tools')) openPanel('tools')
-      })
-
+      attachMainEvents()
       setTimeout(() => {
         zoomWipeTransition(heroScreen, mainScene)
       }, 400)
@@ -165,19 +201,39 @@ function enterForest() {
     .catch((err) => {
       clearInterval(timer)
       console.error('Failed to load main forest scene:', err)
-      hasStartedEntering = false
-      if (heroLoadingWrap) heroLoadingWrap.style.display = 'none'
-      if (heroLoadingBar) heroLoadingBar.style.width = '0%'
-      if (heroLoadingPercent) heroLoadingPercent.textContent = '0%'
-      if (exploreBtn) {
-        exploreBtn.disabled = false
-        exploreBtn.style.display = ''
-      }
-      showInstructionModal()
+      handleEnterError()
     })
 }
 
-exploreBtn?.addEventListener('click', enterForest)
+function attachMainEvents() {
+  mainApp.addEventListener('mouseDown', (e) => {
+    console.log('clicked:', e?.target?.name)
+    const name = e?.target?.name?.toLowerCase()
+    if (!name) return
+    if (name.includes('about')) openPanel('about')
+    else if (name.includes('contact')) openPanel('contact')
+    else if (name.includes('resume')) openPanel('resume')
+    else if (name.includes('portfolio')) openPanel('portfolio')
+    else if (name.includes('short film') || name.includes('film')) openPanel('films')
+    else if (name.includes('tools')) openPanel('tools')
+  })
+
+  mainApp.addEventListener('click', (e) => {
+    console.log('click event:', e?.target?.name)
+  })
+
+  mainApp.addEventListener('mouseup', (e) => {
+    console.log('mouseup event:', e?.target?.name)
+  })
+}
+
+function handleEnterError() {
+  hasStartedEntering = false
+  if (heroLoadingWrap) heroLoadingWrap.style.display = 'none'
+  if (heroLoadingBar) heroLoadingBar.style.width = '0%'
+  if (heroLoadingPercent) heroLoadingPercent.textContent = '0%'
+  showInstructionModal()
+}
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && instructionModal.classList.contains('visible')) {
@@ -189,10 +245,6 @@ document.addEventListener('keydown', (e) => {
 // RESET
 function resetExploreBtn() {
   hasStartedEntering = false
-  if (exploreBtn) {
-    exploreBtn.disabled = false
-    exploreBtn.style.display = ''
-  }
   if (heroLoadingWrap) heroLoadingWrap.style.display = 'none'
   if (heroLoadingBar) heroLoadingBar.style.width = '0%'
   if (heroLoadingPercent) heroLoadingPercent.textContent = '0%'
@@ -396,13 +448,13 @@ const sections = {
   about: {
     title: 'About Me',
     content: `
-      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:40px;align-items:start;" class="about-grid">
-        <img src="/images/Shivani.JPG" style="width:100%;border-radius:12px;object-fit:cover;" />
+      <div style="display:grid;grid-template-columns:0.8fr 1.6fr;gap:40px;align-items:start;" class="about-grid">
+        <img src="/images/Shivani.JPG" style="width:100%;max-height:280px;border-radius:12px;object-fit:cover;object-position:top;" />
         <div>
-          <p style="font-size:11px;letter-spacing:0.3em;color:rgba(0,0,0,0.4);margin-bottom:20px;font-family:'Cinzel',serif;">A BIT ABOUT ME</p>
-          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:16px;font-family:'Cinzel',serif;">Hi! I'm Shivani, a 3D animator and filmmaker with an MFA in Film & Animation from RIT.</p>
-          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:16px;font-family:'Cinzel',serif;">I work across the 3D pipeline — modeling, rigging, animation, and environments.</p>
-          <p style="line-height:2;color:#111;font-size:16px;font-family:'Cinzel',serif;">I've collaborated on projects like ScienceLore and created personal films end to end.</p>
+          <p style="font-size:11px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:20px;font-family:'Cinzel',serif;">A BIT ABOUT ME</p>
+          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">Hi! I'm Shivani, a 3D animator and filmmaker with an MFA in Film & Animation from RIT.</p>
+          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">I work across the 3D pipeline — modeling, rigging, animation, and environments.</p>
+          <p style="line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">I've collaborated on projects like ScienceLore and created personal films end to end.</p>
         </div>
       </div>
     `,
@@ -427,10 +479,10 @@ const sections = {
     title: 'Resume',
     content: `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:24px;padding:20px;">
-        <p style="color:#111;font-size:16px;font-family:'Cinzel',serif;text-align:center;">Want to see my full experience?</p>
+        <p style="color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;text-align:center;">Want to see my full experience?</p>
         <a class="card" href="https://sp9369.wixsite.com/shivanivpednekar/work-experiance" target="_blank" style="text-align:center;min-width:260px;">
-          <div class="card-title" style="color:#111;font-size:15px;font-family:'Cinzel',serif;">View My Resume</div>
-          <div class="card-desc" style="font-family:'Cinzel',serif;">Education &amp; experience</div>
+          <div class="card-title" style="color:#111;font-size:14px;font-family:'Cinzel',serif;font-weight:700;">View My Resume</div>
+          <div class="card-desc" style="font-family:'Cinzel',serif;font-weight:600;">Education &amp; experience</div>
         </a>
       </div>
     `,
@@ -438,44 +490,30 @@ const sections = {
   contact: {
     title: 'Contact',
     content: `
-      <div style="padding:0 60px 0 80px;">
-        <p style="color:#111;font-size:14px;line-height:1.9;margin-bottom:24px;font-family:'Cinzel',serif;">
+      <div style="padding:0 40px;">
+        <p style="color:#111;font-size:13px;line-height:1.8;margin-bottom:20px;font-family:'Cinzel',serif;font-weight:600;">
           I'm seeking opportunities in animation, film, and creative production.
         </p>
-        <div style="display:flex;flex-direction:column;gap:18px;margin-bottom:28px;">
-          <input
-            type="text"
-            id="contact-name"
-            placeholder="Your Name"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;"
-          />
-          <input
-            type="email"
-            id="contact-email"
-            placeholder="Your Email"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;"
-          />
-          <textarea
-            id="contact-message"
-            placeholder="Your Message"
-            rows="3"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:10px 0;color:#111;font-family:'Cinzel',serif;font-size:20px;outline:none;width:100%;resize:none;"
-          ></textarea>
-          <button
-            onclick="sendContact()"
-            style="background:transparent;border:1px solid rgba(0, 0, 0, 0.57);color:#111;padding:12px 36px;border-radius:30px;font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.2em;cursor:pointer;align-self:center;"
-          >
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+          <input type="text" id="contact-name" placeholder="Your Name"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
+          <input type="email" id="contact-email" placeholder="Your Email"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
+          <textarea id="contact-message" placeholder="Your Message" rows="2"
+            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
+          <button onclick="sendContact()"
+            style="background:transparent;border:1px solid rgba(0,0,0,0.35);color:#111;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;">
             SEND MESSAGE
           </button>
         </div>
-        <div style="border-top:1px solid rgba(0,0,0,0.12);padding-top:20px;">
-          <p style="font-size:10px;letter-spacing:0.3em;color:rgba(0,0,0,0.4);margin-bottom:14px;font-family:'Cinzel',serif;">FIND ME ON</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:8px 16px;text-decoration:none;color:#111;font-size:12px;font-family:'Cinzel',serif;">Email</a>
-            <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:8px 16px;text-decoration:none;color:#111;font-size:12px;font-family:'Cinzel',serif;">LinkedIn</a>
-            <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:8px 16px;text-decoration:none;color:#111;font-size:12px;font-family:'Cinzel',serif;">Animation Reel</a>
-            <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:8px 16px;text-decoration:none;color:#111;font-size:12px;font-family:'Cinzel',serif;">Demo Reel</a>
-            <a href="tel:5852903187" style="display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:8px 16px;text-decoration:none;color:#111;font-size:12px;font-family:'Cinzel',serif;">(585) 290-3187</a>
+        <div style="border-top:1px solid rgba(0,0,0,0.12);padding-top:16px;">
+          <p style="font-size:10px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:12px;font-family:'Cinzel',serif;">FIND ME ON</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
+            <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
+            <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
+            <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
+            <a href="tel:5852903187" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
           </div>
         </div>
       </div>

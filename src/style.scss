@@ -62,7 +62,8 @@ body.modal-open {
 }
 
 #hero-label {
-  font-size: 11px;
+  font-size: 15px;
+    font-weight: 700;    
   letter-spacing: 0.55em;
   color: #1a4a0e;
   text-transform: uppercase;
@@ -200,30 +201,43 @@ body.modal-open {
 #hero-loading-overlay {
   position: fixed;
   inset: 0;
-  background: #030a04;
+ /* Fill whole screen — current */
+background: url('/images/Loading.png') center center / cover no-repeat;
+
+/* Exact size */
+background: url('/images/Loading.png') center center / 1920px 1080px no-repeat;
+
+/* Percentage of screen */
+background: url('/images/Loading.png') center center / 80% auto no-repeat;
+
+/* Contain — fit whole image visible */
+background: url('/images/Loading.png') center center / contain no-repeat;
   z-index: 500;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding-top: 20vh; 
   transition: opacity 0.8s ease;
 }
 
 #overlay-name {
   font-family: 'Cinzel Decorative', serif;
   font-size: clamp(18px, 5vw, 36px);
-  color: rgba(220, 255, 230, 0.9);
+ color: rgba(19, 51, 19, 0.8);
   letter-spacing: 0.1em;
   margin-bottom: 32px;
+   font-weight: 700;   
 }
 
 #overlay-loading-line {
   width: 160px;
   height: 1px;
-  background: rgba(168, 240, 192, 0.1);
+ color: rgba(19, 51, 19, 0.8);
   border-radius: 2px;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 15px;
+  font-weight: 700;  
 }
 
 #overlay-loading-bar {
@@ -231,26 +245,28 @@ body.modal-open {
   width: 0%;
   background: linear-gradient(
     90deg,
-    rgba(168, 240, 192, 0.4),
+    rgb(168, 240, 192),
     rgba(168, 240, 192, 0.9),
-    rgba(168, 240, 192, 0.4)
+    rgba(168, 240, 192, 0.89)
   );
   transition: width 0.3s ease;
 }
 
 #overlay-loading-percent {
   font-family: 'Cinzel Decorative', serif;
-  font-size: 12px;
-  color: rgba(168, 240, 192, 0.6);
+  font-size: 15px;
+  color: rgba(19, 51, 19, 0.8);
   letter-spacing: 0.15em;
+    font-weight: 700;   
 }
 
 #overlay-loading-text {
-  font-size: 10px;
+  font-size: 15px;
   letter-spacing: 0.4em;
-  color: rgba(168, 240, 192, 0.3);
+color: rgba(19, 51, 19, 0.8);
   text-transform: uppercase;
   margin-top: 10px;
+    font-weight: 700;   
 }
 
 /* INSTRUCTION MODAL */
@@ -280,8 +296,8 @@ body.modal-open {
 #instruction-card {
   position: relative;
   z-index: 1;
-  width: min(960px, 94vw);
-  min-height: 560px;
+  width: min(1100px, 96vw);
+  min-height: 660px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -297,15 +313,15 @@ body.modal-open {
 
 #instruction-title {
   font-family: 'Cinzel Decorative', serif;
-  font-size: 38px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 600;
   letter-spacing: 0.12em;
   color: #111;
   text-align: center;
   margin: -80px auto 0px;
   background: url('/images/title.png') center center / 100% 100% no-repeat;
-  width: 480px;
-  height: 110px;
+  width: 580px;
+  height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -691,6 +707,13 @@ body.modal-open {
 #panel-close:hover {
   color: white;
 }
+#panel-close img,
+#project-close img,
+#filmstrip-close img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+}
 
 #panel h2 {
   font-size: clamp(18px, 3vw, 26px);
@@ -947,15 +970,21 @@ body.modal-open {
   top: 24px;
   right: 32px;
   background: none;
-  border: 1px solid rgba(168, 240, 192, 0.3);
-  color: rgba(168, 240, 192, 0.7);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 16px;
+  border: none;
   cursor: pointer;
+  padding: 0;
+  width: 60px;
+  height: 60px;
   z-index: 600;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
+  opacity: 0.8;
+}
+
+#project-close:hover,
+#filmstrip-close:hover {
+  opacity: 1;
+  background: none;
+  color: unset;
 }
 
 #project-close:hover,
