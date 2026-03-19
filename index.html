@@ -2,155 +2,168 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Shivani Pednekar</title>
     <link rel="stylesheet" href="/src/style.scss" />
   </head>
   <body>
     <div id="app">
-
-      <!-- ── LOADING SCREEN ── -->
-      <div id="loading-screen">
-        <canvas class="firefly-canvas" id="firefly-canvas"></canvas>
-
-        <svg id="loading-forest" viewBox="0 0 1440 300" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="forestGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#0a1f0d" stop-opacity="0"/>
-              <stop offset="40%" stop-color="#060f08" stop-opacity="0.8"/>
-              <stop offset="100%" stop-color="#030a04" stop-opacity="1"/>
-            </linearGradient>
-          </defs>
-          <g fill="#060f08">
-            <polygon points="0,300 60,120 120,300"/>
-            <polygon points="80,300 150,80 220,300"/>
-            <polygon points="180,300 240,140 300,300"/>
-            <polygon points="260,300 330,60 400,300"/>
-            <polygon points="360,300 420,100 480,300"/>
-            <polygon points="450,300 510,130 570,300"/>
-            <polygon points="540,300 610,70 680,300"/>
-            <polygon points="640,300 700,110 760,300"/>
-            <polygon points="730,300 800,85 870,300"/>
-            <polygon points="830,300 890,120 950,300"/>
-            <polygon points="920,300 990,65 1060,300"/>
-            <polygon points="1020,300 1080,100 1140,300"/>
-            <polygon points="1110,300 1180,130 1250,300"/>
-            <polygon points="1200,300 1270,80 1340,300"/>
-            <polygon points="1300,300 1370,110 1440,300"/>
-            <polygon points="30,300 80,160 130,300" fill="#081208"/>
-            <polygon points="200,300 260,170 320,300" fill="#081208"/>
-            <polygon points="400,300 460,150 520,300" fill="#081208"/>
-            <polygon points="600,300 660,165 720,300" fill="#081208"/>
-            <polygon points="800,300 860,155 920,300" fill="#081208"/>
-            <polygon points="1000,300 1060,170 1120,300" fill="#081208"/>
-            <polygon points="1200,300 1260,150 1320,300" fill="#081208"/>
-          </g>
-          <rect x="0" y="0" width="1440" height="300" fill="url(#forestGrad)"/>
-        </svg>
-
-        <div id="loading-inner">
-          <div id="loading-subtitle">Portfolio</div>
-          <div id="loading-title">Shivani Pednekar</div>
-          <div id="loading-ornament">
-            <div class="line"></div>
-            <div class="dot"></div>
-            <div class="line"></div>
-          </div>
-          <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
-          <div id="loading-percent">0%</div>
-          <div id="loading-hint">entering the forest…</div>
-          <div id="loading-tips">
-            <div class="loading-tip desktop-only">Switch to desktop for best experience</div>
-            <div class="loading-tip">Use W A S D keys to move through the forest</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── HERO PAGE ── -->
-      <div id="hero-screen" class="hidden">
+      <!-- HERO PAGE -->
+      <div id="hero-screen">
         <canvas id="spline-hero"></canvas>
 
         <div id="hero-content">
           <p id="hero-label">Welcome</p>
           <h1 id="hero-name">Shivani Pednekar</h1>
           <p id="hero-tagline">3D Animator &amp; Filmmaker</p>
+
           <div id="hero-ornament">
             <div class="line"></div>
             <div class="dot"></div>
             <div class="line"></div>
           </div>
-          <div id="hero-loading-wrap" style="display:none;flex-direction:column;align-items:center;gap:10px;margin-bottom:32px;">
-            <div id="hero-loading-percent" style="font-family:'Cinzel Decorative',serif;font-size:13px;color:rgba(15,42,8,0.7);letter-spacing:0.15em;">0%</div>
-            <div style="width:140px;height:1px;background:rgba(30,100,20,0.15);border-radius:2px;overflow:hidden;">
-              <div id="hero-loading-bar" style="height:100%;width:0%;background:rgba(30,100,20,0.5);transition:width 0.3s ease;border-radius:2px;"></div>
-            </div>
-            <div style="font-size:10px;letter-spacing:0.3em;color:rgba(15,42,8,0.45);text-transform:uppercase;">loading forest…</div>
-          </div>
-          <button id="explore-btn" onclick="enterForest()">
+
+          <button id="explore-btn" type="button">
             <span>Explore the Forest</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
           </button>
+
+          <div id="hero-loading-wrap">
+            <div id="hero-loading-percent">0%</div>
+            <div id="hero-loading-line">
+              <div id="hero-loading-bar"></div>
+            </div>
+            <div id="hero-loading-text">loading forest...</div>
+          </div>
         </div>
 
-        <!-- WASD hint on hero -->
-        <div class="wasd-hint desktop-only" id="hero-wasd">
-          <div class="wasd-row">
-            <kbd>W</kbd>
+        <!-- HERO LOADING OVERLAY -->
+        <div id="hero-loading-overlay">
+          <p id="overlay-name">Shivani Pednekar</p>
+          <div id="overlay-loading-line">
+            <div id="overlay-loading-bar"></div>
           </div>
-          <div class="wasd-row">
-            <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-          </div>
-          <div class="wasd-labels">
-            <span>Forward &nbsp;·&nbsp; Back &nbsp;·&nbsp; Left &nbsp;·&nbsp; Right</span>
+          <div id="overlay-loading-percent">0%</div>
+          <div id="overlay-loading-text">entering the forest...</div>
+        </div>
+
+        <!-- INSTRUCTION MODAL -->
+        <div id="instruction-modal" aria-hidden="true">
+          <div id="instruction-backdrop"></div>
+
+          <div
+            id="instruction-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="instruction-title"
+          >
+            <p id="instruction-title">How to Explore</p>
+
+            <div class="instruction-divider"></div>
+
+            <div class="instruction-row">
+              <span>Follow the <strong>yellow path</strong> through the forest</span>
+            </div>
+
+            <div class="instruction-row">
+              <div class="instruction-keys">
+                <div class="instr-key-col"><kbd>W</kbd></div>
+                <div class="instr-key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
+              </div>
+              <span>Move <strong>forward, back, left, and right</strong></span>
+            </div>
+
+            <div class="instruction-row">
+              <span><strong>Click objects</strong> in the forest to explore</span>
+            </div>
+
+            <div class="instruction-enter">
+              <kbd class="enter-key">Enter</kbd>
+              <span>to begin your journey</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- ── MAIN PORTFOLIO SCENE ── -->
+      <!-- MAIN PORTFOLIO SCENE -->
       <div id="main-scene" class="hidden">
         <canvas id="spline-forest"></canvas>
+        <!-- BLUR OVERLAY — add right after spline-forest canvas -->
+            <div id="scene-blur-overlay"></div>
 
-        <!-- Desktop nav -->
         <nav id="forest-nav">
-          <button class="nav-dot nav-home" id="nav-home-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+          <button class="nav-dot nav-home" id="nav-home-btn" type="button">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+              <path d="M9 21V12h6v9" />
+            </svg>
             Home
           </button>
+
           <div class="nav-separator"></div>
-          <button class="nav-dot" data-section="about">About Me</button>
-          <button class="nav-dot" data-section="tools">Tools</button>
-          <button class="nav-dot" data-section="portfolio">Portfolio</button>
-          <button class="nav-dot" data-section="films">Short Films</button>
-          <button class="nav-dot" data-section="resume">Resume</button>
-          <button class="nav-dot" data-section="contact">Contact</button>
+
+          <button class="nav-dot" data-section="about" type="button">About Me</button>
+          <button class="nav-dot" data-section="tools" type="button">Tools</button>
+          <button class="nav-dot" data-section="portfolio" type="button">Portfolio</button>
+          <button class="nav-dot" data-section="films" type="button">Short Films</button>
+          <button class="nav-dot" data-section="resume" type="button">Resume</button>
+          <button class="nav-dot" data-section="contact" type="button">Contact</button>
         </nav>
 
-        <!-- Mobile hamburger -->
         <div id="mobile-nav">
-          <button id="hamburger-btn" aria-label="Menu">
+          <button id="hamburger-btn" aria-label="Menu" aria-expanded="false" type="button">
             <span class="ham-line"></span>
             <span class="ham-line"></span>
             <span class="ham-line"></span>
             <span id="ham-label">Menu</span>
           </button>
 
-          <!-- Dropdown -->
-          <div id="mobile-dropdown" class="closed">
-            <button class="mobile-nav-item mobile-home-item" id="mobile-home-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+          <div id="mobile-dropdown">
+            <button class="mobile-nav-item mobile-home-item" id="mobile-home-btn" type="button">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
+                <path d="M9 21V12h6v9" />
+              </svg>
               Home
             </button>
+
             <div class="mobile-nav-divider"></div>
-            <button class="mobile-nav-item" data-section="about">About Me</button>
-            <button class="mobile-nav-item" data-section="tools">Tools</button>
-            <button class="mobile-nav-item" data-section="portfolio">Portfolio</button>
-            <button class="mobile-nav-item" data-section="films">Short Films</button>
-            <button class="mobile-nav-item" data-section="resume">Resume</button>
-            <button class="mobile-nav-item" data-section="contact">Contact</button>
+
+            <button class="mobile-nav-item" data-section="about" type="button">About Me</button>
+            <button class="mobile-nav-item" data-section="tools" type="button">Tools</button>
+            <button class="mobile-nav-item" data-section="portfolio" type="button">Portfolio</button>
+            <button class="mobile-nav-item" data-section="films" type="button">Short Films</button>
+            <button class="mobile-nav-item" data-section="resume" type="button">Resume</button>
+            <button class="mobile-nav-item" data-section="contact" type="button">Contact</button>
           </div>
         </div>
 
-        <!-- WASD hint on main scene -->
         <div class="wasd-hint desktop-only" id="main-wasd">
           <div class="wasd-row">
             <kbd>W</kbd>
@@ -159,50 +172,47 @@
             <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
           </div>
           <div class="wasd-labels">
-            <span>Forward &nbsp;·&nbsp; Back &nbsp;·&nbsp; Left &nbsp;·&nbsp; Right</span>
+            <span>Forward · Back · Left · Right</span>
           </div>
         </div>
 
-        <!-- Main panel -->
         <div id="panel" class="hidden">
-          <button id="panel-close">✕</button>
+          <button id="panel-close" type="button">✕</button>
           <div id="panel-content"></div>
         </div>
 
-        <!-- 3D project overlay -->
         <div id="project-overlay" class="hidden">
-          <button id="project-close">✕</button>
+          <button id="project-close" type="button">✕</button>
           <div id="project-layout">
-            <button class="project-arrow" id="project-prev">←</button>
-            <div id="project-left"><img id="project-img" src="" alt=""/></div>
+            <button class="project-arrow" id="project-prev" type="button">←</button>
+            <div id="project-left"><img id="project-img" src="" alt="" /></div>
             <div id="project-right">
               <p id="project-subtitle"></p>
               <h2 id="project-title"></h2>
               <div id="project-desc"></div>
             </div>
-            <button class="project-arrow" id="project-next">→</button>
+            <button class="project-arrow" id="project-next" type="button">→</button>
           </div>
         </div>
 
-        <!-- Filmstrip overlay -->
         <div id="filmstrip-overlay" class="hidden">
-          <button id="filmstrip-close">✕</button>
+          <button id="filmstrip-close" type="button">✕</button>
           <div id="filmstrip-layout">
-            <div id="filmstrip-main"><img id="film-img" src="" alt=""/></div>
+            <div id="filmstrip-main"><img id="film-img" src="" alt="" /></div>
             <div id="filmstrip-info">
               <h2 id="film-title"></h2>
               <p id="film-counter"></p>
               <div id="filmstrip-controls">
-                <button id="film-prev">←</button>
-                <button id="film-visit">View Film</button>
-                <button id="film-next">→</button>
+                <button id="film-prev" type="button">←</button>
+                <button id="film-visit" type="button">View Film</button>
+                <button id="film-next" type="button">→</button>
               </div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
