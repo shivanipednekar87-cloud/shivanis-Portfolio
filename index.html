@@ -2,121 +2,124 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Shivani Pednekar</title>
     <link rel="stylesheet" href="/src/style.scss" />
+
+    <!-- Preload critical UI images -->
+    <link rel="preload" as="image" href="/images/BG.png">
+    <link rel="preload" as="image" href="/images/navbar.png">
+    <link rel="preload" as="image" href="/images/title.png">
+    <link rel="preload" as="image" href="/images/Cross.png">
+    <link rel="preload" as="image" href="/images/About.png">
+    <link rel="preload" as="image" href="/images/Tools.png">
+    <link rel="preload" as="image" href="/images/Resume.png">
+    <link rel="preload" as="image" href="/images/Portfolio.png">
+    <link rel="preload" as="image" href="/images/Short Films.png">
   </head>
   <body>
+
+    <!-- ══════════════════════════════════════════════
+         LOADING SCREEN — plays while both Splines load (70%)
+    ══════════════════════════════════════════════ -->
+    <div id="loading-screen">
+      <video
+        id="loading-video"
+        src="/images/Loading.mp4"
+        autoplay
+        loop
+        muted
+        playsinline
+      ></video>
+
+      <!-- Loading progress bottom center -->
+      <div id="loading-progress">
+        <div id="loading-bar-wrap">
+          <div id="loading-bar"></div>
+        </div>
+        <!-- ↕ move up/down by changing bottom: in #loading-progress in style.scss -->
+        <div id="loading-percent">0%</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         FINAL LOAD OVERLAY — shown on "Explore" click (30%)
+         Shoots from 70% → 100% then transitions
+    ══════════════════════════════════════════════ -->
+    <div id="final-load-overlay">
+      <div id="final-load-bar-wrap">
+        <div id="final-load-bar"></div>
+      </div>
+      <div id="final-load-percent">70%</div>
+    </div>
+
     <div id="app">
-      <!-- HERO PAGE -->
-      <div id="hero-screen">
+
+      <!-- ══════════════════════════════════════════════
+           HERO PAGE
+      ══════════════════════════════════════════════ -->
+      <div id="hero-screen" class="hidden">
         <canvas id="spline-hero"></canvas>
 
         <div id="hero-content">
           <p id="hero-label">Welcome</p>
           <h1 id="hero-name">Shivani Pednekar</h1>
-         <p id="hero-tagline">3D Designer</p>
-
+          <p id="hero-tagline">3D Designer</p>
           <div id="hero-ornament">
             <div class="line"></div>
             <div class="dot"></div>
             <div class="line"></div>
           </div>
 
-         
-
-          <div id="hero-loading-wrap">
-            <div id="hero-loading-percent">0%</div>
-            <div id="hero-loading-line">
-              <div id="hero-loading-bar"></div>
-            </div>
-            <div id="hero-loading-text">loading forest...</div>
+          <!-- Explore button — title.png as background -->
+          <div id="enter-forest-wrap">
+            <button id="enter-forest-btn" type="button">Explore the Forest</button>
           </div>
         </div>
 
-        <!-- HERO LOADING OVERLAY -->
-        <div id="hero-loading-overlay">
-          
-          <div id="overlay-loading-line">
-            <div id="overlay-loading-bar"></div>
-          </div>
-          <div id="overlay-loading-percent">0%</div>
-          <div id="overlay-loading-text">entering the forest...</div>
-        </div>
-
-        <!-- INSTRUCTION MODAL -->
+        <!-- Info modal — auto-dismisses after 3s -->
         <div id="instruction-modal" aria-hidden="true">
           <div id="instruction-backdrop"></div>
-
-          <div
-            id="instruction-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="instruction-title"
-          >
-            <p id="instruction-title">How to Explore</p>
-
+          <div id="instruction-card" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
+            <div id="instruction-title-wrap">
+              <p id="instruction-title">How to Explore</p>
+              <button id="enter-forest-btn-modal" type="button">Explore the Forest</button>
+            </div>
             <div class="instruction-divider"></div>
-
             <div class="instruction-row">
               <span>Follow the <strong>yellow path</strong> through the forest</span>
             </div>
-
             <div class="instruction-row">
-              <div class="instruction-keys">
-                <div class="instr-key-col"><kbd>W</kbd></div>
-                <div class="instr-key-row"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div>
-              </div>
-              <span>Move <strong>forward, back, left, and right</strong></span>
+              <span><strong>Scroll</strong> to move through the forest</span>
             </div>
-
             <div class="instruction-row">
-              <span><strong>Click objects</strong> in the forest to explore</span>
+              <span><strong>Click the glowing objects</strong> to open sections</span>
             </div>
-
-            <div class="instruction-enter">
-              <kbd class="enter-key">Enter</kbd>
-              <span>to begin your journey</span>
+            <div id="instruction-countdown">
+              <div id="instruction-countdown-bar"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- MAIN PORTFOLIO SCENE -->
+      <!-- ══════════════════════════════════════════════
+           MAIN PORTFOLIO SCENE
+      ══════════════════════════════════════════════ -->
       <div id="main-scene" class="hidden">
         <canvas id="spline-forest"></canvas>
-        <!-- BLUR OVERLAY — add right after spline-forest canvas -->
-            <div id="scene-blur-overlay"></div>
+        <div id="scene-blur-overlay"></div>
 
+        <!-- Desktop nav -->
         <nav id="forest-nav">
-          <button class="nav-dot nav-home" id="nav-home-btn" type="button">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-              <path d="M9 21V12h6v9" />
-            </svg>
-            Home
-          </button>
-
-          <div class="nav-separator"></div>
-
-          <button class="nav-dot" data-section="about" type="button">About Me</button>
-          <button class="nav-dot" data-section="tools" type="button">Tools</button>
+          <button class="nav-dot" data-section="about"     type="button">About Me</button>
+          <button class="nav-dot" data-section="tools"     type="button">Tools</button>
           <button class="nav-dot" data-section="portfolio" type="button">Portfolio</button>
-          <button class="nav-dot" data-section="films" type="button">Short Films</button>
-          <button class="nav-dot" data-section="resume" type="button">Resume</button>
-          <button class="nav-dot" data-section="contact" type="button">Contact</button>
+          <button class="nav-dot" data-section="films"     type="button">Short Films</button>
+          <button class="nav-dot" data-section="resume"    type="button">Resume</button>
+          <button class="nav-dot" data-section="contact"   type="button">Contact</button>
         </nav>
 
+        <!-- Mobile nav -->
         <div id="mobile-nav">
           <button id="hamburger-btn" aria-label="Menu" aria-expanded="false" type="button">
             <span class="ham-line"></span>
@@ -124,53 +127,39 @@
             <span class="ham-line"></span>
             <span id="ham-label">Menu</span>
           </button>
-
           <div id="mobile-dropdown">
-            <button class="mobile-nav-item mobile-home-item" id="mobile-home-btn" type="button">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" />
-                <path d="M9 21V12h6v9" />
-              </svg>
-              Home
-            </button>
-
-            <div class="mobile-nav-divider"></div>
-
-            <button class="mobile-nav-item" data-section="about" type="button">About Me</button>
-            <button class="mobile-nav-item" data-section="tools" type="button">Tools</button>
+            <button class="mobile-nav-item" data-section="about"     type="button">About Me</button>
+            <button class="mobile-nav-item" data-section="tools"     type="button">Tools</button>
             <button class="mobile-nav-item" data-section="portfolio" type="button">Portfolio</button>
-            <button class="mobile-nav-item" data-section="films" type="button">Short Films</button>
-            <button class="mobile-nav-item" data-section="resume" type="button">Resume</button>
-            <button class="mobile-nav-item" data-section="contact" type="button">Contact</button>
+            <button class="mobile-nav-item" data-section="films"     type="button">Short Films</button>
+            <button class="mobile-nav-item" data-section="resume"    type="button">Resume</button>
+            <button class="mobile-nav-item" data-section="contact"   type="button">Contact</button>
           </div>
         </div>
 
-        <div class="wasd-hint desktop-only" id="main-wasd">
-          <div class="wasd-row">
-            <kbd>W</kbd>
-          </div>
-          <div class="wasd-row">
-            <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-          </div>
-          <div class="wasd-labels">
-            <span>Forward · Back · Left · Right</span>
+        <!-- Scroll hint -->
+        <div id="scroll-hint">
+          <span id="scroll-hint-text">Scroll to move</span>
+          <div id="scroll-hint-arrow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12l7 7 7-7"/>
+            </svg>
           </div>
         </div>
 
+        <!-- ── MAIN PANEL ── -->
         <div id="panel" class="hidden">
-          <button id="panel-close" type="button"><img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" /></button>
+          <button id="panel-close" type="button">
+            <img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" />
+          </button>
           <div id="panel-content"></div>
         </div>
 
+        <!-- ── 3D PROJECT OVERLAY ── -->
         <div id="project-overlay" class="hidden">
-          <button id="project-close" type="button"><img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" /></button>
+          <button id="project-close" type="button">
+            <img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" />
+          </button>
           <div id="project-layout">
             <button class="project-arrow" id="project-prev" type="button">←</button>
             <div id="project-left"><img id="project-img" src="" alt="" /></div>
@@ -183,23 +172,40 @@
           </div>
         </div>
 
-        <div id="filmstrip-overlay" class="hidden">
-          <button id="filmstrip-close" type="button"><img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" /></button>
-          <div id="filmstrip-layout">
-            <div id="filmstrip-main"><img id="film-img" src="" alt="" /></div>
-            <div id="filmstrip-info">
-              <h2 id="film-title"></h2>
-              <p id="film-counter"></p>
-              <div id="filmstrip-controls">
-                <button id="film-prev" type="button">←</button>
-                <button id="film-visit" type="button">View Film</button>
-                <button id="film-next" type="button">→</button>
+        <!-- ── FILM DETAIL OVERLAY ── -->
+        <div id="film-detail-overlay" class="hidden">
+          <button id="film-detail-close" type="button">
+            <img src="/images/Cross.png" style="width:80px;height:80px;object-fit:contain;" />
+          </button>
+          <button class="film-detail-arrow" id="film-detail-prev" type="button">&#8592;</button>
+          <button class="film-detail-arrow film-detail-arrow--right" id="film-detail-next" type="button">&#8594;</button>
+          <div id="film-detail-inner">
+            <div id="film-detail-left-img">
+              <div id="film-detail-left-slot"></div>
+              <div id="film-detail-grid-left"></div>
+            </div>
+            <div id="film-detail-content">
+              <p id="film-detail-label"></p>
+              <h2 id="film-detail-title"></h2>
+              <div id="film-detail-body"></div>
+              <div id="film-detail-footer">
+                <span id="film-detail-counter"></span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <!-- ── SCREENSHOT LIGHTBOX ── -->
+        <div id="film-lightbox" class="hidden">
+          <button id="lightbox-close" type="button">&#x2715;</button>
+          <button id="lightbox-prev" type="button">&#8592;</button>
+          <img id="lightbox-img" src="" alt="Screenshot" />
+          <button id="lightbox-next" type="button">&#8594;</button>
+          <div id="lightbox-counter"></div>
+        </div>
+
+      </div><!-- /#main-scene -->
+    </div><!-- /#app -->
 
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -1,94 +1,249 @@
 import { Application } from '@splinetool/runtime'
 
-// PRELOAD MAIN SCENE IN BACKGROUND AS SOON AS HERO LOADS
-let preloadedMainApp = null
-let preloadComplete = false
+// ── SERVICE WORKER ─────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW: registered'))
+      .catch(err => console.warn('SW: failed', err))
+  })
+}
 
-function preloadMainScene() {
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.style.display = 'none'
-  tempCanvas.width = 1
-  tempCanvas.height = 1
-  document.body.appendChild(tempCanvas)
+// ─────────────────────────────────────────────────────────────────────────────
+// LOADING STRATEGY: sequential, NOT parallel
+//
+// Loading both Spline scenes at the same time blocks the main thread so hard
+// that the browser marks the page as unresponsive.
+//
+// New order:
+//   1. Load hero scene (0% → 45%)
+//   2. When hero is done, load forest scene (45% → 70%)
+//   3. When forest is done, hold at 70%, show hero page
+//   4. User clicks Explore → fake 70% → 100% bar → transition
+// ─────────────────────────────────────────────────────────────────────────────
 
-  preloadedMainApp = new Application(tempCanvas)
-  preloadedMainApp
+// ── PROGRESS UI ───────────────────────────────────────────────────────────────
+const loadingBar     = document.getElementById('loading-bar')
+const loadingPercent = document.getElementById('loading-percent')
+let   displayPct     = 0
+let   tickInterval   = null
+
+function setProgress(pct) {
+  displayPct = Math.min(Math.round(pct), 99)
+  if (loadingBar)     loadingBar.style.width    = displayPct + '%'
+  if (loadingPercent) loadingPercent.textContent = displayPct + '%'
+}
+
+// Smoothly tick up toward a target value
+function tickToward(target, onDone) {
+  clearInterval(tickInterval)
+  tickInterval = setInterval(() => {
+    if (displayPct >= target) {
+      clearInterval(tickInterval)
+      onDone?.()
+      return
+    }
+    setProgress(displayPct + Math.random() * 3 + 0.5)
+  }, 150)
+}
+
+// ── DOM REFS ──────────────────────────────────────────────────────────────────
+const heroScreen       = document.getElementById('hero-screen')
+const mainScene        = document.getElementById('main-scene')
+const instructionModal = document.getElementById('instruction-modal')
+const finalOverlay     = document.getElementById('final-load-overlay')
+const finalBar         = document.getElementById('final-load-bar')
+const finalPercent     = document.getElementById('final-load-percent')
+
+let mainApp  = null
+let mainApp_ready = false
+
+// ── STEP 1: LOAD HERO SCENE ───────────────────────────────────────────────────
+// Tick 0 → 45% while hero loads
+setProgress(0)
+tickToward(45, null)  // tick freely, hero load will interrupt when done
+
+const heroCanvas = document.getElementById('spline-hero')
+const heroApp    = new Application(heroCanvas)
+const isMobile   = window.innerWidth < 900
+
+heroApp
+  .load('https://prod.spline.design/vbshuvh8WR0UjWQw/scene.splinecode')
+  .then(() => {
+    clearInterval(tickInterval)
+    setProgress(45)
+    console.log('Hero loaded — starting forest load')
+
+    if (isMobile) {
+      try { heroApp.setVariable('isMobile', true) } catch (e) {}
+      try { heroApp.setVariable('mobile', true)   } catch (e) {}
+      try { heroApp.emitEvent('keydown', 'Mobile') } catch (e) {}
+      try {
+        const cam = heroApp.findObjectByName('Mobile')
+        if (cam) heroApp.setActiveCamera(cam)
+      } catch (e) {}
+    }
+
+    // Yield to the browser for one frame before starting forest load
+    // This prevents the back-to-back load from blocking the thread
+    requestAnimationFrame(() => {
+      setTimeout(() => loadForestScene(), 100)
+    })
+  })
+  .catch((err) => {
+    console.error('Hero scene failed:', err)
+    clearInterval(tickInterval)
+    setProgress(45)
+    // Still try to load forest even if hero failed
+    setTimeout(() => loadForestScene(), 100)
+  })
+
+// ── STEP 2: LOAD FOREST SCENE ─────────────────────────────────────────────────
+// Tick 45 → 70% while forest loads
+function loadForestScene() {
+  tickToward(70, null)  // tick toward 70, forest load will stop it
+
+  const mainCanvas = document.getElementById('spline-forest')
+  mainApp = new Application(mainCanvas)
+
+  mainApp
     .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
     .then(() => {
-      preloadComplete = true
-      console.log('Main scene preloaded!')
+      clearInterval(tickInterval)
+      setProgress(70)
+      if (loadingPercent) loadingPercent.textContent = '70%'
+      attachMainEvents()
+      mainApp_ready = true
+      console.log('Forest loaded — showing hero page')
+
+      // Yield one frame then dismiss loading screen
+      requestAnimationFrame(() => {
+        setTimeout(() => dismissLoadingScreen(), 200)
+      })
     })
     .catch((err) => {
-      console.warn('Preload failed, will load on demand:', err)
-      preloadedMainApp = null
-      preloadComplete = false
+      console.error('Forest scene failed:', err)
+      clearInterval(tickInterval)
+      setProgress(70)
+      mainApp_ready = true
+      setTimeout(() => dismissLoadingScreen(), 200)
     })
 }
 
-// ZOOM TRANSITION
-function zoomWipeTransition(outEl, inEl, onDone) {
-  inEl.style.display = ''
-  inEl.classList.remove('hidden')
-  inEl.style.opacity = '1'
-  inEl.style.transform = 'scale(1)'
-  inEl.style.zIndex = '1'
+// ── DISMISS LOADING SCREEN ────────────────────────────────────────────────────
+function dismissLoadingScreen() {
+  const loadingScreen = document.getElementById('loading-screen')
 
-  outEl.style.position = 'fixed'
-  outEl.style.inset = '0'
-  outEl.style.zIndex = '10'
+  loadingScreen.style.transition = 'opacity 0.8s ease'
+  loadingScreen.style.opacity    = '0'
+
+  setTimeout(() => {
+    loadingScreen.style.display = 'none'
+    heroScreen.classList.remove('hidden')
+    heroScreen.style.opacity    = '0'
+    heroScreen.style.transition = 'opacity 0.6s ease'
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { heroScreen.style.opacity = '1' })
+    })
+    // Preload panel images now that both scenes are done
+    setTimeout(() => preloadPanelImages(), 500)
+  }, 800)
+}
+
+// ── STEP 3: FINAL LOAD OVERLAY (70% → 100%) ───────────────────────────────────
+// Shown when user clicks Explore — purely visual, forest is already loaded
+function runFinalLoad(onComplete) {
+  if (finalOverlay) {
+    finalOverlay.style.display    = 'flex'
+    finalOverlay.style.opacity    = '0'
+    finalOverlay.style.transition = 'opacity 0.3s ease'
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { finalOverlay.style.opacity = '1' })
+    })
+  }
+
+  if (finalBar)     finalBar.style.width      = '70%'
+  if (finalPercent) finalPercent.textContent  = '70%'
+
+  let pct = 70
+  const interval = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 6 + 3, 100)
+    if (finalBar)     finalBar.style.width     = pct + '%'
+    if (finalPercent) finalPercent.textContent = Math.floor(pct) + '%'
+    if (pct >= 100) {
+      clearInterval(interval)
+      if (finalBar)     finalBar.style.width     = '100%'
+      if (finalPercent) finalPercent.textContent = '100%'
+      setTimeout(() => {
+        if (finalOverlay) finalOverlay.style.opacity = '0'
+        setTimeout(() => {
+          if (finalOverlay) finalOverlay.style.display = 'none'
+          onComplete()
+        }, 400)
+      }, 300)
+    }
+  }, 60)
+}
+
+// ── ZOOM TRANSITION ───────────────────────────────────────────────────────────
+function zoomWipeTransition(outEl, inEl, onDone) {
+  inEl.style.display   = ''
+  inEl.classList.remove('hidden')
+  inEl.style.opacity   = '1'
+  inEl.style.transform = 'scale(1)'
+  inEl.style.zIndex    = '1'
+
+  outEl.style.position        = 'fixed'
+  outEl.style.inset           = '0'
+  outEl.style.zIndex          = '10'
   outEl.style.transformOrigin = 'center center'
-  outEl.style.transition = 'transform 1.1s cubic-bezier(0.4,0,0.2,1), opacity 0.9s ease'
-  outEl.style.transform = 'scale(1)'
-  outEl.style.opacity = '1'
+  outEl.style.transition      = 'transform 1.1s cubic-bezier(0.4,0,0.2,1), opacity 0.9s ease'
+  outEl.style.transform       = 'scale(1)'
+  outEl.style.opacity         = '1'
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       outEl.style.transform = 'scale(1.18)'
-      outEl.style.opacity = '0'
+      outEl.style.opacity   = '0'
     })
   })
 
   setTimeout(() => {
-    outEl.style.display = 'none'
-    outEl.style.transform = 'scale(1)'
-    outEl.style.opacity = '1'
+    outEl.style.display    = 'none'
+    outEl.style.transform  = 'scale(1)'
+    outEl.style.opacity    = '1'
     outEl.style.transition = ''
-    outEl.style.zIndex = ''
-    inEl.style.zIndex = ''
+    outEl.style.zIndex     = ''
+    inEl.style.zIndex      = ''
     onDone?.()
   }, 1100)
 }
 
-// BLUR OVERLAY
+// ── BLUR OVERLAY ──────────────────────────────────────────────────────────────
 function showBlur() {
-  document.getElementById('scene-blur-overlay').classList.add('active')
+  const o = document.getElementById('scene-blur-overlay')
+  if (o) o.classList.add('active')
 }
 function hideBlur() {
-  document.getElementById('scene-blur-overlay').classList.remove('active')
+  const o = document.getElementById('scene-blur-overlay')
+  if (o) o.classList.remove('active')
 }
 
-// DOM
-const heroScreen = document.getElementById('hero-screen')
-const mainScene = document.getElementById('main-scene')
-
-const exploreBtn = document.getElementById('explore-btn')
-const heroLoadingWrap = document.getElementById('hero-loading-wrap')
-const heroLoadingBar = document.getElementById('hero-loading-bar')
-const heroLoadingPercent = document.getElementById('hero-loading-percent')
-
-const heroLoadingOverlay = document.getElementById('hero-loading-overlay')
-const overlayLoadingBar = document.getElementById('overlay-loading-bar')
-const overlayLoadingPercent = document.getElementById('overlay-loading-percent')
-
-const instructionModal = document.getElementById('instruction-modal')
-
-let hasStartedEntering = false
-let mainApp = null
-
+// ── INSTRUCTION MODAL ─────────────────────────────────────────────────────────
 function showInstructionModal() {
   instructionModal.classList.add('visible')
   instructionModal.setAttribute('aria-hidden', 'false')
   document.body.classList.add('modal-open')
+
+  const bar = document.getElementById('instruction-countdown-bar')
+  if (bar) {
+    bar.style.transition = 'none'
+    bar.style.width      = '100%'
+    bar.getBoundingClientRect()
+    // ── COUNTDOWN BAR DURATION — change '3s' to match the timer below
+    bar.style.transition = 'width 3s linear'
+    bar.style.width      = '0%'
+  }
 }
 
 function hideInstructionModal() {
@@ -97,580 +252,373 @@ function hideInstructionModal() {
   document.body.classList.remove('modal-open')
 }
 
-// HERO SPLINE
-const heroCanvas = document.getElementById('spline-hero')
-const heroApp = new Application(heroCanvas)
-const isMobile = window.innerWidth < 900
-
-let heroProgress = 0
-const heroLoadTimer = setInterval(() => {
-  heroProgress = Math.min(heroProgress + Math.random() * 8, 90)
-  if (overlayLoadingBar) overlayLoadingBar.style.width = heroProgress + '%'
-  if (overlayLoadingPercent) overlayLoadingPercent.textContent = Math.floor(heroProgress) + '%'
-}, 200)
-
-heroApp
-  .load('https://prod.spline.design/vbshuvh8WR0UjWQw/scene.splinecode')
-  .then(() => {
-    clearInterval(heroLoadTimer)
-    if (overlayLoadingBar) overlayLoadingBar.style.width = '100%'
-    if (overlayLoadingPercent) overlayLoadingPercent.textContent = '100%'
-
-    if (isMobile) {
-      try { heroApp.setVariable('isMobile', true) } catch (e) {}
-      try { heroApp.setVariable('mobile', true) } catch (e) {}
-      try { heroApp.emitEvent('keydown', 'Mobile') } catch (e) {}
-      try {
-        const cam = heroApp.findObjectByName('Mobile')
-        if (cam) heroApp.setActiveCamera(cam)
-      } catch (e) {}
-    }
-
-    setTimeout(() => {
-      if (heroLoadingOverlay) {
-        heroLoadingOverlay.style.opacity = '0'
-        setTimeout(() => {
-          heroLoadingOverlay.style.display = 'none'
-          showInstructionModal()
-          // START PRELOADING MAIN SCENE IN BACKGROUND
-          preloadMainScene()
-        }, 900)
-      }
-    }, 400)
+function attachMainEvents() {
+  mainApp.addEventListener('mouseDown', (e) => {
+    const name = e?.target?.name?.toLowerCase()
+    if (!name) return
+    if (name.includes('about'))                                    openPanel('about')
+    else if (name.includes('contact'))                             openPanel('contact')
+    else if (name.includes('resume'))                              openPanel('resume')
+    else if (name.includes('portfolio'))                           openPanel('portfolio')
+    else if (name.includes('short film') || name.includes('film')) openPanel('films')
+    else if (name.includes('tools'))                               openPanel('tools')
   })
-  .catch((err) => {
-    clearInterval(heroLoadTimer)
-    console.error('Failed to load hero scene:', err)
-  })
+}
 
-// ENTER FOREST
+// ── ENTER FOREST ──────────────────────────────────────────────────────────────
+let hasStartedEntering = false
+
 function enterForest() {
   if (hasStartedEntering) return
   hasStartedEntering = true
-
-  hideInstructionModal()
-
-  if (heroLoadingWrap) heroLoadingWrap.style.display = 'flex'
-
-  // If preload already done, transfer to real canvas instantly
-  if (preloadComplete && preloadedMainApp) {
-    const mainCanvas = document.getElementById('spline-forest')
-
-    if (heroLoadingBar) heroLoadingBar.style.width = '100%'
-    if (heroLoadingPercent) heroLoadingPercent.textContent = '100%'
-
-    // Load fresh on real canvas using preloaded data
-    mainApp = new Application(mainCanvas)
-    mainApp
-      .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
-      .then(() => {
-        attachMainEvents()
-        setTimeout(() => {
-          zoomWipeTransition(heroScreen, mainScene)
-        }, 200)
-      })
-      .catch((err) => {
-        console.error('Failed to load main scene:', err)
-        handleEnterError()
-      })
-    return
-  }
-
-  // Fallback — load normally with progress bar
-  let progress = 0
-  const timer = setInterval(() => {
-    progress = Math.min(progress + Math.random() * 8, 90)
-    if (heroLoadingBar) heroLoadingBar.style.width = progress + '%'
-    if (heroLoadingPercent) heroLoadingPercent.textContent = Math.floor(progress) + '%'
-  }, 200)
-
-  const mainCanvas = document.getElementById('spline-forest')
-  mainApp = new Application(mainCanvas)
-
-  mainApp
-    .load('https://prod.spline.design/ECO255J46CJmatfK/scene.splinecode')
-    .then(() => {
-      clearInterval(timer)
-      if (heroLoadingBar) heroLoadingBar.style.width = '100%'
-      if (heroLoadingPercent) heroLoadingPercent.textContent = '100%'
-      attachMainEvents()
-      setTimeout(() => {
-        zoomWipeTransition(heroScreen, mainScene)
-      }, 400)
-    })
-    .catch((err) => {
-      clearInterval(timer)
-      console.error('Failed to load main forest scene:', err)
-      handleEnterError()
-    })
-}
-
-function attachMainEvents() {
-  mainApp.addEventListener('mouseDown', (e) => {
-    console.log('clicked:', e?.target?.name)
-    const name = e?.target?.name?.toLowerCase()
-    if (!name) return
-    if (name.includes('about')) openPanel('about')
-    else if (name.includes('contact')) openPanel('contact')
-    else if (name.includes('resume')) openPanel('resume')
-    else if (name.includes('portfolio')) openPanel('portfolio')
-    else if (name.includes('short film') || name.includes('film')) openPanel('films')
-    else if (name.includes('tools')) openPanel('tools')
-  })
-
-  mainApp.addEventListener('click', (e) => {
-    console.log('click event:', e?.target?.name)
-  })
-
-  mainApp.addEventListener('mouseup', (e) => {
-    console.log('mouseup event:', e?.target?.name)
-  })
-}
-
-function handleEnterError() {
-  hasStartedEntering = false
-  if (heroLoadingWrap) heroLoadingWrap.style.display = 'none'
-  if (heroLoadingBar) heroLoadingBar.style.width = '0%'
-  if (heroLoadingPercent) heroLoadingPercent.textContent = '0%'
   showInstructionModal()
+
+  // ── INSTRUCTION MODAL DURATION — change 3000 to adjust (ms)
+  setTimeout(() => {
+    hideInstructionModal()
+    runFinalLoad(() => {
+      zoomWipeTransition(heroScreen, mainScene)
+    })
+  }, 3000)
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && instructionModal.classList.contains('visible')) {
-    e.preventDefault()
-    enterForest()
-  }
-})
+document.getElementById('enter-forest-btn')?.addEventListener('click',       () => enterForest())
+document.getElementById('enter-forest-btn-modal')?.addEventListener('click', () => enterForest())
 
-// RESET
-function resetExploreBtn() {
-  hasStartedEntering = false
-  if (heroLoadingWrap) heroLoadingWrap.style.display = 'none'
-  if (heroLoadingBar) heroLoadingBar.style.width = '0%'
-  if (heroLoadingPercent) heroLoadingPercent.textContent = '0%'
+// ── PANEL IMAGE PRELOAD ───────────────────────────────────────────────────────
+function preloadPanelImages() {
+  const urls = [
+    ...projects3D.map(p => p.image),
+    ...films.map(f => f.thumbnail),
+    ...films.flatMap(f => f.screenshots || []),
+    '/images/Portfolio BG.png',
+    '/images/Hugs and hues BG.png',
+    '/images/puddle up BG.png',
+    '/images/wharli whishper BG.png',
+    '/images/Science lore BG.jpg',
+  ]
+  urls.forEach(src => { const img = new Image(); img.src = src })
 }
 
-// HOME
-function goHome() {
-  closePanel()
-  hideBlur()
-  resetExploreBtn()
-  heroScreen.classList.remove('hidden')
-  zoomWipeTransition(mainScene, heroScreen, () => {
-    showInstructionModal()
-  })
-}
-
-document.getElementById('nav-home-btn')?.addEventListener('click', goHome)
-document.getElementById('mobile-home-btn')?.addEventListener('click', () => {
-  closeMobileMenu()
-  goHome()
-})
-
-// MOBILE MENU
-const hamburgerBtn = document.getElementById('hamburger-btn')
+// ── MOBILE MENU ───────────────────────────────────────────────────────────────
+const hamburgerBtn   = document.getElementById('hamburger-btn')
 const mobileDropdown = document.getElementById('mobile-dropdown')
-const mobileNav = document.getElementById('mobile-nav')
+const mobileNav      = document.getElementById('mobile-nav')
 
 hamburgerBtn?.addEventListener('click', (e) => {
   e.stopPropagation()
   if (mobileDropdown.classList.contains('open')) closeMobileMenu()
   else openMobileMenu()
 })
-
 function openMobileMenu() {
   mobileDropdown.classList.add('open')
   hamburgerBtn.classList.add('open')
   hamburgerBtn.setAttribute('aria-expanded', 'true')
 }
-
 function closeMobileMenu() {
   mobileDropdown.classList.remove('open')
   hamburgerBtn.classList.remove('open')
   hamburgerBtn.setAttribute('aria-expanded', 'false')
 }
-
 document.addEventListener('click', (e) => {
   if (mobileNav && !mobileNav.contains(e.target)) closeMobileMenu()
 })
 
-// DATA
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 const projects3D = [
   {
-    id: 'park',
-    title: 'Stylized Park Environment',
-    subtitle: '3D Environment',
+    id: 'park', title: 'Stylized Park Environment', subtitle: '3D Environment',
     image: '/images/park-environment.png',
-    description: `This stylized park environment was created as a personal project to explore environment setup and visual storytelling.
-
-I focused on overall composition, asset placement, and scale to create a believable yet stylized park setting.
-
-This project helped me better understand environment assembly and scene composition.`,
+    description: `This stylized park environment was created as a personal project to explore environment setup and visual storytelling.\n\nI focused on overall composition, asset placement, and scale to create a believable yet stylized park setting.\n\nThis project helped me better understand environment assembly and scene composition.`,
   },
   {
-    id: 'fox',
-    title: 'Fox Creature',
-    subtitle: 'Stylized 3D Modeling',
+    id: 'fox', title: 'Fox Creature', subtitle: 'Stylized 3D Modeling',
     image: '/images/fox-creature.png',
-    description: `This model started as a just-for-fun experiment — a fox with bat wings, demon horns, and a bit of fire.
-
-The process was playful and intuitive, letting the design grow naturally as I modeled.
-
-This piece reminded me how much I enjoy building characters that feel alive and full of charm.`,
+    description: `This model started as a just-for-fun experiment — a fox with bat wings, demon horns, and a bit of fire.\n\nThe process was playful and intuitive, letting the design grow naturally as I modeled.\n\nThis piece reminded me how much I enjoy building characters that feel alive and full of charm.`,
   },
   {
-    id: 'tree',
-    title: 'Stylized Tree',
-    subtitle: '3D Environment Prop',
+    id: 'tree', title: 'Stylized Tree', subtitle: '3D Environment Prop',
     image: '/images/stylized-tree.png',
-    description: `This stylized tree was modeled and textured as a personal study in environment prop creation.
-
-I focused on creating a strong silhouette and simplified forms.
-
-This project helped me better understand stylized environment modeling and organic form development.`,
+    description: `This stylized tree was modeled and textured as a personal study in environment prop creation.\n\nI focused on creating a strong silhouette and simplified forms.\n\nThis project helped me better understand stylized environment modeling and organic form development.`,
   },
   {
-    id: 'boot',
-    title: 'Boot Study',
-    subtitle: '3D Modeling — Maya',
+    id: 'boot', title: 'Boot Study', subtitle: '3D Modeling — Maya',
     image: '/images/boot-study.jpg',
-    description: `This boot model was created as part of an assignment, modeled entirely in Autodesk Maya.
-
-Focusing on clean geometry helped me better understand how to build shapes efficiently.
-
-This project reinforced my comfort with hard-surface and prop modeling in Maya.`,
+    description: `This boot model was created as part of an assignment, modeled entirely in Autodesk Maya.\n\nFocusing on clean geometry helped me better understand how to build shapes efficiently.\n\nThis project reinforced my comfort with hard-surface and prop modeling in Maya.`,
   },
   {
-    id: 'bench',
-    title: 'Stylized Park Bench',
-    subtitle: '3D Prop Study',
+    id: 'bench', title: 'Stylized Park Bench', subtitle: '3D Prop Study',
     image: '/images/park-bench.png',
-    description: `This park bench was modeled in ZBrush and textured in Adobe Substance Painter.
-
-The project allowed me to explore wood and metal materials and subtle texture variation.
-
-Through this I gained a better understanding of prop modeling workflow.`,
+    description: `This park bench was modeled in ZBrush and textured in Adobe Substance Painter.\n\nThe project allowed me to explore wood and metal materials and subtle texture variation.\n\nThrough this I gained a better understanding of prop modeling workflow.`,
   },
   {
-    id: 'hand',
-    title: 'Hand Study',
-    subtitle: '3D Modeling — Maya + ZBrush',
+    id: 'hand', title: 'Hand Study', subtitle: '3D Modeling — Maya + ZBrush',
     image: '/images/hand-study.png',
-    description: `This hand model was created during my MFA in Film & Animation at RIT.
-
-I built a base mesh in Maya then moved into ZBrush to refine the form and surface detail.
-
-This project strengthened my understanding of human anatomy and organic 3D modeling.`,
+    description: `This hand model was created during my MFA in Film & Animation at RIT.\n\nI built a base mesh in Maya then moved into ZBrush to refine the form and surface detail.\n\nThis project strengthened my understanding of human anatomy and organic 3D modeling.`,
   },
 ]
 
 const films = [
   {
-    title: 'Puddle Up!!',
-    image: '/images/puddle-up.png',
-    link: 'https://sp9369.wixsite.com/shivanivpednekar/about',
+    id: 'hugs', title: 'Hugs in Hues', label: 'Short Film',
+    bgImage: '/images/Hugs and hues BG.png', thumbnail: '/images/hugs-in-hues.png',
+    screenshots: ['/images/hugs-1.png','/images/hugs-2.png','/images/hugs-3.png','/images/hugs-4.png'],
+    detailTitle: 'Behind the Hues',
+    description: [
+      `Hugs and Hues is a short animated film that grew from my relationship with emotions and how I naturally express them. I've always found it easier to process feelings through images, colors, light, and movement rather than words. Animation became the language that felt most honest to me.`,
+      `The film follows a young artist who retreats into her drawings, slipping into a painted world where emotions take shape visually. Through this journey, she learns to face her fears, express herself, and reconnect with the people around her. The story is quiet and gentle, focusing on small moments rather than big dialogue.`,
+      `Visually, I explored painterly textures, color, and lighting to communicate emotion. I wanted the world to feel soft, expressive, and slightly imperfect — like a painting that breathes. Much of the process involved experimenting with mood and color to let the visuals carry the emotional weight of the story.`,
+      `Hugs and Hues is deeply personal to me. It reflects how I understand connection, vulnerability, and care, and how art can become a bridge when words feel difficult.`,
+    ],
   },
   {
-    title: 'Hugs in Hues',
-    image: '/images/hugs-in-hues.png',
-    link: 'https://sp9369.wixsite.com/shivanivpednekar/copy-of-warli-whispers',
+    id: 'puddle', title: 'Puddle Up!!', label: 'Short Film',
+    bgImage: '/images/puddle up BG.png', thumbnail: '/images/puddle-up.png',
+    leftVideo: '/images/puddle-1.mp4', leftImage: '/images/puddle-2.png',
+    screenshots: ['/images/puddle-2.png','/images/puddle-3.png','/images/puddle-4.png'],
+    detailTitle: 'Behind the Splash',
+    description: [
+      `This 30-second short was created during my master's program and was my very first finished film. I started with a character rig from Animation Methods and a few environment assets from TurboSquid, and jumped straight into animating in Maya.`,
+      `Midway through the project, I realized there were things I wanted to explore in Unreal Engine, especially lighting and mood. That meant figuring out how to properly bring a Maya rig into Unreal, which took a lot more time than I expected but taught me a lot about pipelines and problem-solving.`,
+      `One of the biggest challenges was texturing and lighting the environment in grayscale. I didn't want to simply desaturate the final render in post — I wanted to actually understand how values, contrast, and lighting work without relying on color. It was difficult, but it pushed me to think more intentionally about mood and composition.`,
+      `Looking back, there are definitely things I would approach differently now, but this project was an important learning experience and a meaningful first step in my journey as an animator.`,
+    ],
   },
   {
-    title: 'Warli Whispers',
-    image: '/images/warli-whispers.png',
-    link: 'https://sp9369.wixsite.com/shivanivpednekar/copy-of-puddle-up',
+    id: 'warli', title: 'Warli Whispers', label: 'Short Film',
+    bgImage: '/images/wharli whishper BG.png', thumbnail: '/images/warli-whispers.png',
+    screenshots: ['/images/warli-1.png','/images/warli-2.png','/images/warli-3.png','/images/warli-4.png'],
+    detailTitle: 'Behind the Whispers',
+    description: [
+      `Warli Whispers is a short animated film inspired by Warli art, a traditional Indian folk art form that has always been close to my heart. My mother has always loved Warli paintings, and growing up, I painted a Warli mural on the wall of my parents' bedroom. That wall became something I lived with every day.`,
+      `As a child, I often imagined the painted figures coming to life at night — the stick figures moving, talking, dancing, and carrying out their everyday chores once no one was watching. That childhood imagination stayed with me, and this film grew directly from that feeling.`,
+      `In Warli Whispers, I wanted to bring that wall to life through animation, letting the drawings move gently and tell quiet stories. The goal wasn't dramatic motion, but subtle, rhythmic movement that feels natural and respectful to the simplicity of Warli art.`,
+      `The entire film was created in After Effects, where I focused on animating the hand-painted forms while preserving their texture and handmade quality. This project is deeply personal, connecting my cultural roots, family memories, and my early fascination with the idea that drawings could move.`,
+    ],
   },
   {
-    title: 'ScienceLore',
-    image: '/images/Science lore.jpg',
-    link: 'https://www.rit.edu/news/rit-graduate-student-launches-pilot-episode-sciencelore-educational-series',
+    id: 'sciencelore', title: 'ScienceLore', label: 'Short Film',
+    bgImage: '/images/Science lore BG.jpg', thumbnail: '/images/Science lore.jpg',
+    leftYoutube: 'https://www.youtube.com/embed/PBs7AcSVsSM?autoplay=1&mute=1&loop=1&playlist=PBs7AcSVsSM',
+    screenshots: ['/images/sciencelore-1.jpg','/images/sciencelore-2.jpg','/images/sciencelore-3.jpg','/images/sciencelore-4.jpg'],
+    detailTitle: 'ScienceLore',
+    description: [
+      `ScienceLore is an educational animated series that blends storytelling with science concepts for younger audiences.`,
+      `This project involved collaborative production work at RIT, bringing together animation, writing, and educational design.`,
+    ],
   },
 ]
 
+// ─── FILM DETAIL ──────────────────────────────────────────────────────────────
+let curFilmDetail = 0
+
+function openFilmDetail(i) {
+  curFilmDetail = i
+  const panel   = document.getElementById('panel')
+  const overlay = document.getElementById('film-detail-overlay')
+  if (!overlay) return
+  panel?.classList.add('hidden')
+  renderFilmDetail()
+  overlay.classList.remove('hidden')
+  overlay.style.display = 'flex'
+  hideBlur(); lockScroll()
+}
+
+function renderFilmDetail() {
+  const f       = films[curFilmDetail]
+  const overlay = document.getElementById('film-detail-overlay')
+  if (!overlay) return
+  overlay.style.backgroundImage = `url('${encodeURI(f.bgImage)}')`
+
+  const leftSlot = document.getElementById('film-detail-left-slot')
+  if (leftSlot) {
+    if (f.leftYoutube) {
+      leftSlot.innerHTML = `<iframe src="${f.leftYoutube}" style="width:100%;max-width:560px;aspect-ratio:16/9;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,0.6);display:block;border:none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
+    } else if (f.leftVideo) {
+      leftSlot.innerHTML = `<video src="${f.leftVideo}" autoplay loop muted playsinline style="width:100%;max-width:560px;max-height:62vh;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,0.6);display:block;object-fit:cover;cursor:default;"></video>`
+    } else {
+      const imgSrc = f.leftImage || (f.screenshots && f.screenshots[0]) || ''
+      leftSlot.innerHTML = `<img id="film-detail-img" src="${imgSrc}" alt="${f.title}" style="width:100%;max-width:560px;max-height:62vh;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,0.6);display:block;object-fit:cover;cursor:pointer;"/>`
+      const imgEl = leftSlot.querySelector('#film-detail-img')
+      if (imgEl && f.screenshots?.length) imgEl.addEventListener('click', () => openLightbox(f.screenshots, 0))
+    }
+  }
+
+  const gridLeft = document.getElementById('film-detail-grid-left')
+  if (gridLeft) {
+    gridLeft.innerHTML = (f.screenshots || []).map((src, i) => `
+      <div class="film-screenshot" data-index="${i}">
+        <img src="${src}" alt="Screenshot ${i+1}" loading="lazy"
+             onerror="this.closest('.film-screenshot').style.display='none'" />
+      </div>`).join('')
+    gridLeft.querySelectorAll('.film-screenshot').forEach(el => {
+      el.addEventListener('click', () => openLightbox(f.screenshots, parseInt(el.dataset.index)))
+    })
+  }
+
+  const labelEl = document.getElementById('film-detail-label');   if (labelEl)  labelEl.textContent  = f.label
+  const titleEl = document.getElementById('film-detail-title');   if (titleEl)  titleEl.textContent  = f.detailTitle
+  const bodyEl  = document.getElementById('film-detail-body');    if (bodyEl)   bodyEl.innerHTML     = f.description.map(p => `<p>${p}</p>`).join('')
+  const ctrEl   = document.getElementById('film-detail-counter'); if (ctrEl)    ctrEl.textContent    = `${curFilmDetail + 1} / ${films.length}`
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
+let lightboxImages = [], lightboxCur = 0
+
+function openLightbox(images, startIdx) {
+  lightboxImages = images; lightboxCur = startIdx
+  renderLightbox()
+  document.getElementById('film-lightbox').classList.remove('hidden')
+  document.getElementById('film-lightbox').style.display = 'flex'
+}
+function renderLightbox() {
+  document.getElementById('lightbox-img').src             = lightboxImages[lightboxCur]
+  document.getElementById('lightbox-counter').textContent = `${lightboxCur + 1} / ${lightboxImages.length}`
+}
+document.getElementById('lightbox-close')?.addEventListener('click', () => { document.getElementById('film-lightbox').classList.add('hidden'); document.getElementById('film-lightbox').style.display = '' })
+document.getElementById('lightbox-prev')?.addEventListener('click',  () => { lightboxCur = (lightboxCur-1+lightboxImages.length)%lightboxImages.length; renderLightbox() })
+document.getElementById('lightbox-next')?.addEventListener('click',  () => { lightboxCur = (lightboxCur+1)%lightboxImages.length; renderLightbox() })
+document.getElementById('film-lightbox')?.addEventListener('click',  (e) => { if (e.target===document.getElementById('film-lightbox')) { document.getElementById('film-lightbox').classList.add('hidden'); document.getElementById('film-lightbox').style.display='' } })
+document.getElementById('film-detail-close')?.addEventListener('click', () => { const o=document.getElementById('film-detail-overlay'); o.classList.add('hidden'); o.style.display=''; unlockScroll(); openPanel('films') })
+document.getElementById('film-detail-prev')?.addEventListener('click',  () => { curFilmDetail=(curFilmDetail-1+films.length)%films.length; renderFilmDetail() })
+document.getElementById('film-detail-next')?.addEventListener('click',  () => { curFilmDetail=(curFilmDetail+1)%films.length; renderFilmDetail() })
+
+// ─── CAROUSEL ─────────────────────────────────────────────────────────────────
 function makeCarousel(items, id) {
   return `
     <div class="carousel-container" id="${id}">
       <div class="carousel-track" id="track-${id}">
         ${items.map((item, i) => `
-          <div class="carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
-            <img src="${item.image}" alt="${item.title}" />
+          <div class="carousel-slide ${i===0?'active':''}" data-index="${i}">
+            <img src="${item.thumbnail||item.image}" alt="${item.title}" />
             <div class="carousel-slide-info">
               <div class="card-title">${item.title}</div>
-              <div class="card-desc">${item.subtitle || 'Short film'}</div>
+              <div class="card-desc">${item.label||item.subtitle||'Short film'}</div>
             </div>
-          </div>
-        `).join('')}
+          </div>`).join('')}
       </div>
       <div class="carousel-nav">
         <button class="carousel-btn" id="prev-${id}" type="button">←</button>
         <div class="carousel-dots" id="dots-${id}">
-          ${items.map((_, i) => `<div class="carousel-dot ${i === 0 ? 'active' : ''}"></div>`).join('')}
+          ${items.map((_,i) => `<div class="carousel-dot ${i===0?'active':''}"></div>`).join('')}
         </div>
         <button class="carousel-btn" id="next-${id}" type="button">→</button>
       </div>
-    </div>
-  `
+    </div>`
 }
 
 function initCarousel(id, items, onClickFn) {
   let cur = 0
   const track = document.getElementById(`track-${id}`)
   if (!track) return
-
   const slides = track.querySelectorAll('.carousel-slide')
-  const dots = document.querySelectorAll(`#dots-${id} .carousel-dot`)
-
+  const dots   = document.querySelectorAll(`#dots-${id} .carousel-dot`)
   function goTo(i) {
-    slides[cur].classList.remove('active')
-    dots[cur].classList.remove('active')
-    cur = (i + items.length) % items.length
-    slides[cur].classList.add('active')
-    dots[cur].classList.add('active')
-    const sw = slides[0].offsetWidth + 20
-    track.style.transform = `translateX(-${Math.max(0, cur * sw - track.parentElement.offsetWidth / 2 + sw / 2)}px)`
+    slides[cur].classList.remove('active'); dots[cur].classList.remove('active')
+    cur = (i+items.length)%items.length
+    slides[cur].classList.add('active'); dots[cur].classList.add('active')
+    slides[cur].scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})
   }
-
-  document.getElementById(`prev-${id}`)?.addEventListener('click', () => goTo(cur - 1))
-  document.getElementById(`next-${id}`)?.addEventListener('click', () => goTo(cur + 1))
-
-  slides.forEach((s, i) => {
-    s.addEventListener('click', () => {
-      if (i === cur) onClickFn(i)
-      else goTo(i)
-    })
-  })
-
-  dots.forEach((d, i) => d.addEventListener('click', () => goTo(i)))
+  document.getElementById(`prev-${id}`)?.addEventListener('click', ()=>goTo(cur-1))
+  document.getElementById(`next-${id}`)?.addEventListener('click', ()=>goTo(cur+1))
+  slides.forEach((s,i) => s.addEventListener('click', ()=>{ goTo(i); onClickFn(i) }))
+  dots.forEach((d,i)   => d.addEventListener('click', ()=>goTo(i)))
 }
 
-// SECTIONS
+// ─── SCROLL LOCK ──────────────────────────────────────────────────────────────
+function lockScroll() {
+  const scrollY = window.scrollY
+  document.body.style.position='fixed'; document.body.style.top=`-${scrollY}px`
+  document.body.style.left='0'; document.body.style.right='0'; document.body.style.overflow='hidden'
+}
+function unlockScroll() {
+  const scrollY = Math.abs(parseInt(document.body.style.top||'0'))
+  document.body.style.position=''; document.body.style.top=''; document.body.style.left=''
+  document.body.style.right=''; document.body.style.overflow=''; window.scrollTo(0,scrollY)
+}
+
+// ─── SCROLL HINT ──────────────────────────────────────────────────────────────
+function hideScrollHint() {
+  const hint = document.getElementById('scroll-hint')
+  if (!hint) return
+  hint.style.opacity='0'; hint.style.pointerEvents='none'
+  setTimeout(()=>{hint.style.display='none'},600)
+}
+window.addEventListener('wheel',     hideScrollHint, {once:true, passive:true})
+window.addEventListener('touchmove', hideScrollHint, {once:true, passive:true})
+
+const sectionBg = {
+  about:'/images/About.png', tools:'/images/Tools.png', resume:'/images/Resume.png',
+  portfolio:'/images/Portfolio.png', films:'/images/Short Films.png', contact:'/images/BG.png',
+}
+
 const sections = {
-  about: {
-    title: 'About Me',
-    content: `
-      <div style="display:grid;grid-template-columns:0.8fr 1.6fr;gap:40px;align-items:start;" class="about-grid">
-        <img src="/images/Shivani.JPG" style="width:100%;max-height:280px;border-radius:12px;object-fit:cover;object-position:top;" />
-        <div>
-          <p style="font-size:11px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:20px;font-family:'Cinzel',serif;">A BIT ABOUT ME</p>
-          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">Hi! I'm Shivani, a 3D animator and filmmaker with an MFA in Film & Animation from RIT.</p>
-          <p style="margin-bottom:18px;line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">I work across the 3D pipeline — modeling, rigging, animation, and environments.</p>
-          <p style="line-height:2;color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;">I've collaborated on projects like ScienceLore and created personal films end to end.</p>
-        </div>
-      </div>
-    `,
-  },
-  tools: {
-    title: 'Tools & Skills',
-    content: `
-      <div style="display:flex;align-items:center;justify-content:center;padding-top:40px;min-height:400px;">
-        <img src="/images/tools.png" style="max-width:90%;max-height:50vh;object-fit:contain;border-radius:12px;" />
-      </div>
-    `,
-  },
-  portfolio: {
-    title: 'Portfolio',
-    content: `<div style="padding-top:30px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`,
-  },
-  films: {
-    title: 'Short Films',
-    content: `<div style="padding-top:30px;">${makeCarousel(films, 'carousel-films')}</div>`,
-  },
-  resume: {
-    title: 'Resume',
-    content: `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:24px;padding:20px;">
-        <p style="color:#111;font-size:15px;font-family:'Cinzel',serif;font-weight:600;text-align:center;">Want to see my full experience?</p>
-        <a class="card" href="https://sp9369.wixsite.com/shivanivpednekar/work-experiance" target="_blank" style="text-align:center;min-width:260px;">
-          <div class="card-title" style="color:#111;font-size:14px;font-family:'Cinzel',serif;font-weight:700;">View My Resume</div>
-          <div class="card-desc" style="font-family:'Cinzel',serif;font-weight:600;">Education &amp; experience</div>
-        </a>
-      </div>
-    `,
-  },
-  contact: {
-    title: 'Contact',
-    content: `
-      <div style="padding:0 40px;">
-        <p style="color:#111;font-size:13px;line-height:1.8;margin-bottom:20px;font-family:'Cinzel',serif;font-weight:600;">
-          I'm seeking opportunities in animation, film, and creative production.
-        </p>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-          <input type="text" id="contact-name" placeholder="Your Name"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
-          <input type="email" id="contact-email" placeholder="Your Email"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
-          <textarea id="contact-message" placeholder="Your Message" rows="2"
-            style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
-          <button onclick="sendContact()"
-            style="background:transparent;border:1px solid rgba(0,0,0,0.35);color:#111;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;">
-            SEND MESSAGE
-          </button>
-        </div>
-        <div style="border-top:1px solid rgba(0,0,0,0.12);padding-top:16px;">
-          <p style="font-size:10px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:12px;font-family:'Cinzel',serif;">FIND ME ON</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
-            <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
-            <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
-            <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
-            <a href="tel:5852903187" style="background:rgba(0,0,0,0.05);border:1px solid rgba(0,0,0,0.18);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
-          </div>
-        </div>
-      </div>
-    `,
-  },
+  about:  { title:'About Me',       content:`` },
+  tools:  { title:'Tools & Skills', content:`` },
+  portfolio: { title:'Portfolio',   content:`<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">${makeCarousel(projects3D,'carousel-3d')}</div>` },
+  films:     { title:'Short Films', content:`<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">${makeCarousel(films,'carousel-films')}</div>` },
+  resume: { title:'Resume', content:`<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:400px;"><a href="/images/Shivani Vinayak Pednekar_2026.pdf" target="_blank" rel="noopener noreferrer" class="resume-download-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>View Resume</a></div>` },
+  contact: { title:'Contact', content:`<div style="padding:55px 30px 0 30px;"><p style="color:#fff;font-size:15px;line-height:1.8;margin-bottom:14px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p><div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"><input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/><input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/><textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;resize:none;"></textarea><button onclick="sendContact()" style="background:transparent;border:1px solid rgba(255,255,255,0.5);color:#fff;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button></div><div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:12px;"><p style="font-size:12px;letter-spacing:0.3em;color:#fff;font-weight:700;margin-bottom:10px;font-family:'Cinzel',serif;">FIND ME ON</p><div style="display:flex;gap:8px;flex-wrap:wrap;"><a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Email</a><a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a><a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a><a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a><a href="tel:5852903187" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a></div></div></div>` },
 }
 
-// PANEL
 function openPanel(section) {
   if (!sections[section]) return
-
-  document.getElementById('panel-content').innerHTML = `
-    <h2>${sections[section].title}</h2>
-    <div class="panel-divider"></div>
-    <div class="panel-body">${sections[section].content}</div>
-  `
-
   const panel = document.getElementById('panel')
-  panel.scrollTop = 0
-  panel.classList.remove('hidden')
-  showBlur()
-
-  if (section === 'portfolio') {
-    initCarousel('carousel-3d', projects3D, (i) => open3DProject(projects3D[i].id))
-  }
-  if (section === 'films') {
-    initCarousel('carousel-films', films, (i) => openFilmstrip(i))
-  }
+  panel.style.backgroundImage = `url('${encodeURI(sectionBg[section])}')`
+  document.getElementById('panel-content').innerHTML = `<div class="panel-body panel-body--no-title">${sections[section].content}</div>`
+  panel.scrollTop=0; panel.classList.remove('hidden'); panel.style.display='block'
+  showBlur(); lockScroll()
+  if (section==='portfolio') initCarousel('carousel-3d',    projects3D, (i)=>open3DProject(projects3D[i].id))
+  if (section==='films')     initCarousel('carousel-films', films,      (i)=>openFilmDetail(i))
 }
 
 function closePanel() {
-  document.getElementById('panel').classList.add('hidden')
-  hideBlur()
-  document.querySelectorAll('.nav-dot[data-section], .mobile-nav-item[data-section]').forEach((b) => {
-    b.classList.remove('active')
-  })
+  const panel = document.getElementById('panel')
+  panel.classList.add('hidden'); panel.style.display=''
+  hideBlur(); unlockScroll()
+  document.querySelectorAll('.nav-dot[data-section],.mobile-nav-item[data-section]').forEach(b=>b.classList.remove('active'))
 }
 
 document.getElementById('panel-close')?.addEventListener('click', closePanel)
 
-// NAV
 function setNav(key) {
-  document
-    .querySelectorAll('.nav-dot[data-section], .mobile-nav-item[data-section]')
-    .forEach((b) => {
-      b.classList.toggle('active', b.getAttribute('data-section') === key)
-    })
+  document.querySelectorAll('.nav-dot[data-section],.mobile-nav-item[data-section]').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-section')===key)
+  )
 }
-
-document.querySelectorAll('.nav-dot[data-section]').forEach((btn) => {
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    const key = btn.getAttribute('data-section')
-    setNav(key)
-    openPanel(key)
-  })
+document.querySelectorAll('.nav-dot[data-section]').forEach(btn=>{
+  btn.addEventListener('click',(e)=>{ e.stopPropagation(); const k=btn.getAttribute('data-section'); setNav(k); openPanel(k) })
+})
+document.querySelectorAll('.mobile-nav-item[data-section]').forEach(btn=>{
+  btn.addEventListener('click',()=>{ const k=btn.getAttribute('data-section'); closeMobileMenu(); setNav(k); openPanel(k) })
 })
 
-document.querySelectorAll('.mobile-nav-item[data-section]').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const key = btn.getAttribute('data-section')
-    closeMobileMenu()
-    setNav(key)
-    openPanel(key)
-  })
-})
-
-// 3D PROJECT OVERLAY
 let curProj = 0
-
 function open3DProject(id) {
-  curProj = projects3D.findIndex((p) => p.id === id)
+  curProj = projects3D.findIndex(p=>p.id===id)
   renderProj()
-  document.getElementById('project-overlay').classList.remove('hidden')
+  const overlay = document.getElementById('project-overlay')
+  overlay.style.backgroundImage="url('/images/Portfolio BG.png')"
+  overlay.classList.remove('hidden')
   document.getElementById('panel').classList.add('hidden')
+  showBlur(); lockScroll()
 }
-
 function renderProj() {
   const p = projects3D[curProj]
-  document.getElementById('project-img').src = p.image
-  document.getElementById('project-img').alt = p.title
-  document.getElementById('project-title').textContent = p.title
-  document.getElementById('project-subtitle').textContent = p.subtitle
-  document.getElementById('project-desc').innerHTML = p.description
-    .split('\n\n')
-    .map((t) => `<p>${t}</p>`)
-    .join('')
+  document.getElementById('project-img').src=p.image; document.getElementById('project-img').alt=p.title
+  document.getElementById('project-title').textContent=p.title; document.getElementById('project-subtitle').textContent=p.subtitle
+  document.getElementById('project-desc').innerHTML=p.description.split('\n\n').map(t=>`<p>${t}</p>`).join('')
 }
+document.getElementById('project-close')?.addEventListener('click',()=>{ document.getElementById('project-overlay').classList.add('hidden'); unlockScroll(); openPanel('portfolio') })
+document.getElementById('project-prev')?.addEventListener('click', ()=>{ curProj=(curProj-1+projects3D.length)%projects3D.length; renderProj() })
+document.getElementById('project-next')?.addEventListener('click', ()=>{ curProj=(curProj+1)%projects3D.length; renderProj() })
 
-document.getElementById('project-close')?.addEventListener('click', () => {
-  document.getElementById('project-overlay').classList.add('hidden')
-  hideBlur()
-})
-
-document.getElementById('project-prev')?.addEventListener('click', () => {
-  curProj = (curProj - 1 + projects3D.length) % projects3D.length
-  renderProj()
-})
-
-document.getElementById('project-next')?.addEventListener('click', () => {
-  curProj = (curProj + 1) % projects3D.length
-  renderProj()
-})
-
-// FILMSTRIP OVERLAY
-let curFilm = 0
-
-function openFilmstrip(i = 0) {
-  curFilm = i
-  updateFilm()
-  document.getElementById('filmstrip-overlay').classList.remove('hidden')
-  document.getElementById('panel').classList.add('hidden')
-}
-
-function updateFilm() {
-  const f = films[curFilm]
-  document.getElementById('film-img').src = f.image
-  document.getElementById('film-img').alt = f.title
-  document.getElementById('film-title').textContent = f.title
-  document.getElementById('film-counter').textContent = `${curFilm + 1} / ${films.length}`
-}
-
-document.getElementById('film-prev')?.addEventListener('click', () => {
-  curFilm = (curFilm - 1 + films.length) % films.length
-  updateFilm()
-})
-
-document.getElementById('film-next')?.addEventListener('click', () => {
-  curFilm = (curFilm + 1) % films.length
-  updateFilm()
-})
-
-document.getElementById('filmstrip-close')?.addEventListener('click', () => {
-  document.getElementById('filmstrip-overlay').classList.add('hidden')
-  hideBlur()
-})
-
-document.getElementById('film-visit')?.addEventListener('click', () => {
-  window.open(films[curFilm].link, '_blank')
-})
-
-// CONTACT
 function sendContact() {
-  const n = document.getElementById('contact-name').value.trim()
-  const e = document.getElementById('contact-email').value.trim()
-  const m = document.getElementById('contact-message').value.trim()
-
-  if (!n || !e || !m) {
-    alert('Please fill in all fields!')
-    return
-  }
-
-  const subject = encodeURIComponent(`Portfolio Contact from ${n}`)
-  const body = encodeURIComponent(`${m}\n\nFrom: ${e}`)
-  window.location.href = `mailto:shivanipednekar87@gmail.com?subject=${subject}&body=${body}`
+  const n=document.getElementById('contact-name').value.trim()
+  const e=document.getElementById('contact-email').value.trim()
+  const m=document.getElementById('contact-message').value.trim()
+  if (!n||!e||!m) { alert('Please fill in all fields!'); return }
+  window.location.href=`mailto:shivanipednekar87@gmail.com?subject=${encodeURIComponent(`Portfolio Contact from ${n}`)}&body=${encodeURIComponent(`${m}\n\nFrom: ${e}`)}`
 }
 
-window.open3DProject = open3DProject
-window.openFilmstrip = openFilmstrip
-window.sendContact = sendContact
+window.open3DProject=open3DProject; window.openFilmDetail=openFilmDetail; window.sendContact=sendContact
