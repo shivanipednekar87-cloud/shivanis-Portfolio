@@ -6,7 +6,8 @@
     <title>Shivani Pednekar</title>
     <link rel="stylesheet" href="/src/style.scss" />
 
-    <!-- Preload critical UI images -->
+    <link rel="preload" as="image" href="/images/hero-bw.png">
+    <link rel="preload" as="image" href="/images/hero-color.png">
     <link rel="preload" as="image" href="/images/BG.png">
     <link rel="preload" as="image" href="/images/navbar.png">
     <link rel="preload" as="image" href="/images/title.png">
@@ -19,33 +20,16 @@
   </head>
   <body>
 
-    <!-- ══════════════════════════════════════════════
-         LOADING SCREEN — plays while both Splines load (70%)
-    ══════════════════════════════════════════════ -->
     <div id="loading-screen">
-      <video
-        id="loading-video"
-        src="/images/Loading.mp4"
-        autoplay
-        loop
-        muted
-        playsinline
-      ></video>
-
-      <!-- Loading progress bottom center -->
+      <video id="loading-video" src="/images/Loading.mp4" autoplay loop muted playsinline></video>
       <div id="loading-progress">
         <div id="loading-bar-wrap">
           <div id="loading-bar"></div>
         </div>
-        <!-- ↕ move up/down by changing bottom: in #loading-progress in style.scss -->
         <div id="loading-percent">0%</div>
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════
-         FINAL LOAD OVERLAY — shown on "Explore" click (30%)
-         Shoots from 70% → 100% then transitions
-    ══════════════════════════════════════════════ -->
     <div id="final-load-overlay">
       <div id="final-load-bar-wrap">
         <div id="final-load-bar"></div>
@@ -55,45 +39,38 @@
 
     <div id="app">
 
-      <!-- ══════════════════════════════════════════════
-           HERO PAGE
-      ══════════════════════════════════════════════ -->
+      <!-- ── HERO: paint reveal ── -->
       <div id="hero-screen" class="hidden">
-        <canvas id="spline-hero"></canvas>
 
-        <div id="hero-content">
-          <p id="hero-label">Welcome</p>
-          <h1 id="hero-name">Shivani Pednekar</h1>
-          <p id="hero-tagline">3D Designer</p>
-          <div id="hero-ornament">
-            <div class="line"></div>
-            <div class="dot"></div>
-            <div class="line"></div>
-          </div>
+        <!-- bottom layer: color image -->
+        <div id="hero-color-layer"></div>
 
-          <!-- Explore button — title.png as background -->
-          <div id="enter-forest-wrap">
-            <button id="enter-forest-btn" type="button">Explore the Forest</button>
-          </div>
+        <!-- paint reveal canvas sits on top of color, below scratch canvas -->
+        <canvas id="hero-scratch"></canvas>
+
+        <!-- hint + button overlay -->
+        <div id="hero-ui">
+          <p id="hero-hint">Brush to reveal</p>
+          <button id="enter-forest-btn" type="button">Step Inside</button>
         </div>
 
-        <!-- Info modal — auto-dismisses after 3s -->
+        <!-- instruction modal stays the same -->
         <div id="instruction-modal" aria-hidden="true">
           <div id="instruction-backdrop"></div>
           <div id="instruction-card" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
             <div id="instruction-title-wrap">
               <p id="instruction-title">How to Explore</p>
-              <button id="enter-forest-btn-modal" type="button">Explore the Forest</button>
+              <button id="enter-forest-btn-modal" type="button">Step Inside</button>
             </div>
             <div class="instruction-divider"></div>
             <div class="instruction-row">
-              <span>Follow the <strong>yellow path</strong> through the forest</span>
-            </div>
-            <div class="instruction-row">
-              <span><strong>Scroll</strong> to move through the forest</span>
+              <span>Use <strong>WASD or Arrow Keys</strong> to move around</span>
             </div>
             <div class="instruction-row">
               <span><strong>Click the glowing objects</strong> to open sections</span>
+            </div>
+            <div class="instruction-row">
+              <span>Or use the <strong>nav bar</strong> at the top</span>
             </div>
             <div id="instruction-countdown">
               <div id="instruction-countdown-bar"></div>
@@ -102,24 +79,20 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════
-           MAIN PORTFOLIO SCENE
-      ══════════════════════════════════════════════ -->
+      <!-- ── MAIN SCENE: house ── -->
       <div id="main-scene" class="hidden">
         <canvas id="spline-forest"></canvas>
         <div id="scene-blur-overlay"></div>
 
-        <!-- Desktop nav -->
         <nav id="forest-nav">
-          <button class="nav-dot" data-section="about"     type="button">About Me</button>
-          <button class="nav-dot" data-section="tools"     type="button">Tools</button>
+          <button class="nav-dot" data-section="about" type="button">About Me</button>
+          <button class="nav-dot" data-section="skills" type="button">Skills</button>
           <button class="nav-dot" data-section="portfolio" type="button">Portfolio</button>
-          <button class="nav-dot" data-section="films"     type="button">Short Films</button>
-          <button class="nav-dot" data-section="resume"    type="button">Resume</button>
-          <button class="nav-dot" data-section="contact"   type="button">Contact</button>
+          <button class="nav-dot" data-section="films" type="button">Short Films</button>
+          <button class="nav-dot" data-section="resume" type="button">Resume</button>
+          <button class="nav-dot" data-section="contact" type="button">Contact</button>
         </nav>
 
-        <!-- Mobile nav -->
         <div id="mobile-nav">
           <button id="hamburger-btn" aria-label="Menu" aria-expanded="false" type="button">
             <span class="ham-line"></span>
@@ -128,18 +101,17 @@
             <span id="ham-label">Menu</span>
           </button>
           <div id="mobile-dropdown">
-            <button class="mobile-nav-item" data-section="about"     type="button">About Me</button>
-            <button class="mobile-nav-item" data-section="tools"     type="button">Tools</button>
+            <button class="mobile-nav-item" data-section="about" type="button">About Me</button>
+            <button class="mobile-nav-item" data-section="skills" type="button">Skills</button>
             <button class="mobile-nav-item" data-section="portfolio" type="button">Portfolio</button>
-            <button class="mobile-nav-item" data-section="films"     type="button">Short Films</button>
-            <button class="mobile-nav-item" data-section="resume"    type="button">Resume</button>
-            <button class="mobile-nav-item" data-section="contact"   type="button">Contact</button>
+            <button class="mobile-nav-item" data-section="films" type="button">Short Films</button>
+            <button class="mobile-nav-item" data-section="resume" type="button">Resume</button>
+            <button class="mobile-nav-item" data-section="contact" type="button">Contact</button>
           </div>
         </div>
 
-        <!-- Scroll hint -->
         <div id="scroll-hint">
-          <span id="scroll-hint-text">Scroll to move</span>
+          <span id="scroll-hint-text">WASD to move</span>
           <div id="scroll-hint-arrow">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14M5 12l7 7 7-7"/>
@@ -147,7 +119,6 @@
           </div>
         </div>
 
-        <!-- ── MAIN PANEL ── -->
         <div id="panel" class="hidden">
           <button id="panel-close" type="button">
             <img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" />
@@ -155,7 +126,6 @@
           <div id="panel-content"></div>
         </div>
 
-        <!-- ── 3D PROJECT OVERLAY ── -->
         <div id="project-overlay" class="hidden">
           <button id="project-close" type="button">
             <img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" />
@@ -172,7 +142,6 @@
           </div>
         </div>
 
-        <!-- ── FILM DETAIL OVERLAY ── -->
         <div id="film-detail-overlay" class="hidden">
           <button id="film-detail-close" type="button">
             <img src="/images/Cross.png" style="width:80px;height:80px;object-fit:contain;" />
@@ -195,7 +164,6 @@
           </div>
         </div>
 
-        <!-- ── SCREENSHOT LIGHTBOX ── -->
         <div id="film-lightbox" class="hidden">
           <button id="lightbox-close" type="button">&#x2715;</button>
           <button id="lightbox-prev" type="button">&#8592;</button>
@@ -204,8 +172,8 @@
           <div id="lightbox-counter"></div>
         </div>
 
-      </div><!-- /#main-scene -->
-    </div><!-- /#app -->
+      </div>
+    </div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

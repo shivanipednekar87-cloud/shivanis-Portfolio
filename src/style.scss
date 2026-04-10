@@ -1,41 +1,64 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap');
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
+html,
+body {
+  width: 100%;
+  height: 100%;
+  /* ← REMOVED overflow: hidden — it was swallowing wheel events before they reached Spline */
+  overscroll-behavior: none;
   background: #000;
   font-family: 'Cinzel', serif;
 }
 
-body.modal-open { overflow: hidden; }
-
-#app { width: 100vw; height: 100vh; position: relative; }
-
-#hero-screen, #main-scene {
-  position: fixed; inset: 0;
-  width: 100vw; height: 100vh;
+#app {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
-#hero-screen.hidden, #main-scene.hidden { display: none; }
-
-#spline-hero, #spline-forest {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; display: block;
+#hero-screen,
+#main-scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  /* ← REMOVED overflow: hidden — same reason */
 }
 
-/* ─── LOADING SCREEN ─────────────────────────────────────────────────────────── */
+#hero-screen.hidden,
+#main-scene.hidden {
+  display: none;
+}
+
+#spline-hero,
+#spline-forest {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 #loading-screen {
-  position: fixed; inset: 0; z-index: 900;
+  position: fixed;
+  inset: 0;
+  z-index: 900;
   background: #000;
 }
 
 #loading-video {
-  width: 100vw; height: 100vh;
-  object-fit: cover; display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-
 /* ─── LOADING PROGRESS ───────────────────────────────────────────────────────── */
 /*
   ↕ TO MOVE UP OR DOWN: change the `bottom` value below.
@@ -460,4 +483,79 @@ body.modal-open { overflow: hidden; }
   #instruction-title-wrap { width: 190px; height: 60px; }
   #instruction-title { font-size: 15px; }
   #enter-forest-wrap { width: 220px; height: 56px; }
+}
+/* ── PAINT REVEAL HERO ───────────────────────────────────────────────────────── */
+
+#hero-screen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+#hero-color-layer {
+  position: absolute;
+  inset: 0;
+  background: url('/images/hero-color.png') center center / 100% 100% no-repeat;
+  z-index: 0;
+}
+
+#hero-scratch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  cursor: crosshair;
+}
+
+#hero-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 60px;
+  pointer-events: none;
+}
+
+#hero-hint {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+
+#enter-forest-btn {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50px;
+  padding: 13px 40px;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #fff;
+  cursor: pointer;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+#enter-forest-btn.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#enter-forest-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
