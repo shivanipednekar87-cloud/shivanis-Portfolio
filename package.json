@@ -12,7 +12,7 @@
     "vite": "^6.0.5"
   },
   "dependencies": {
-    "@splinetool/runtime": "^1.12.69",
+    "@splinetool/runtime": "^1.12.81",
     "glsl-blend": "^1.0.3",
     "glslify-loader": "^2.0.0",
     "gsap": "^3.12.7",
