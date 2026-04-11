@@ -8,15 +8,16 @@
 
     <link rel="preload" as="image" href="/images/hero-bw.png">
     <link rel="preload" as="image" href="/images/hero-color.png">
-    <link rel="preload" as="image" href="/images/BG.png">
-    <link rel="preload" as="image" href="/images/navbar.png">
-    <link rel="preload" as="image" href="/images/title.png">
+    <link rel="preload" as="image" href="/images/NavBar.png">
     <link rel="preload" as="image" href="/images/Cross.png">
     <link rel="preload" as="image" href="/images/About.png">
     <link rel="preload" as="image" href="/images/Tools.png">
     <link rel="preload" as="image" href="/images/Resume.png">
     <link rel="preload" as="image" href="/images/Portfolio.png">
     <link rel="preload" as="image" href="/images/Short Films.png">
+    <link rel="preload" as="image" href="/images/Contact.png">
+    <link rel="preload" as="image" href="/images/Instruction.png">
+    <link rel="preload" as="image" href="/images/StepInsideButton.png">
   </head>
   <body>
 
@@ -39,39 +40,22 @@
 
     <div id="app">
 
-      <!-- ── HERO: paint reveal ── -->
+      <!-- HERO: paint reveal -->
       <div id="hero-screen" class="hidden">
 
-        <!-- bottom layer: color image -->
         <div id="hero-color-layer"></div>
-
-        <!-- paint reveal canvas sits on top of color, below scratch canvas -->
         <canvas id="hero-scratch"></canvas>
 
-        <!-- hint + button overlay -->
         <div id="hero-ui">
-          <p id="hero-hint">Brush to reveal</p>
-          <button id="enter-forest-btn" type="button">Step Inside</button>
+          <p id="hero-hint">Move your brush to reveal</p>
+          <div id="enter-forest-wrap">
+            <button id="enter-forest-btn" type="button">Step Inside</button>
+          </div>
         </div>
 
-        <!-- instruction modal stays the same -->
         <div id="instruction-modal" aria-hidden="true">
           <div id="instruction-backdrop"></div>
           <div id="instruction-card" role="dialog" aria-modal="true" aria-labelledby="instruction-title">
-            <div id="instruction-title-wrap">
-              <p id="instruction-title">How to Explore</p>
-              <button id="enter-forest-btn-modal" type="button">Step Inside</button>
-            </div>
-            <div class="instruction-divider"></div>
-            <div class="instruction-row">
-              <span>Use <strong>WASD or Arrow Keys</strong> to move around</span>
-            </div>
-            <div class="instruction-row">
-              <span><strong>Click the glowing objects</strong> to open sections</span>
-            </div>
-            <div class="instruction-row">
-              <span>Or use the <strong>nav bar</strong> at the top</span>
-            </div>
             <div id="instruction-countdown">
               <div id="instruction-countdown-bar"></div>
             </div>
@@ -79,10 +63,21 @@
         </div>
       </div>
 
-      <!-- ── MAIN SCENE: house ── -->
+      <!-- MAIN SCENE: house -->
       <div id="main-scene" class="hidden">
         <canvas id="spline-forest"></canvas>
         <div id="scene-blur-overlay"></div>
+
+        <!-- SPEECH BUBBLE (proximity) -->
+        <div id="speech-bubble">
+          <div id="speech-bubble-inner">
+            <img id="speech-bubble-char" src="/images/Text bubble.png" alt="Shivani character" />
+            <div id="speech-bubble-box">
+              <p id="speech-bubble-msg"></p>
+              <span id="speech-bubble-hint">Press Enter or click to open</span>
+            </div>
+          </div>
+        </div>
 
         <nav id="forest-nav">
           <button class="nav-dot" data-section="about" type="button">About Me</button>
@@ -127,8 +122,9 @@
         </div>
 
         <div id="project-overlay" class="hidden">
+          <!-- Close button now TOP LEFT -->
           <button id="project-close" type="button">
-            <img src="/images/Cross.png" style="width:100px;height:100px;object-fit:contain;" />
+            <img src="/images/Cross.png" />
           </button>
           <div id="project-layout">
             <button class="project-arrow" id="project-prev" type="button">←</button>
@@ -144,7 +140,7 @@
 
         <div id="film-detail-overlay" class="hidden">
           <button id="film-detail-close" type="button">
-            <img src="/images/Cross.png" style="width:80px;height:80px;object-fit:contain;" />
+            <img src="/images/Cross.png" />
           </button>
           <button class="film-detail-arrow" id="film-detail-prev" type="button">&#8592;</button>
           <button class="film-detail-arrow film-detail-arrow--right" id="film-detail-next" type="button">&#8594;</button>
@@ -165,7 +161,9 @@
         </div>
 
         <div id="film-lightbox" class="hidden">
-          <button id="lightbox-close" type="button">&#x2715;</button>
+          <button id="lightbox-close" type="button">
+            <img src="/images/Cross.png" style="width:44px;height:44px;object-fit:contain;" />
+          </button>
           <button id="lightbox-prev" type="button">&#8592;</button>
           <img id="lightbox-img" src="" alt="Screenshot" />
           <button id="lightbox-next" type="button">&#8594;</button>

@@ -35,8 +35,10 @@ const instructionModal = document.getElementById('instruction-modal')
 const finalOverlay     = document.getElementById('final-load-overlay')
 const finalBar         = document.getElementById('final-load-bar')
 const finalPercent     = document.getElementById('final-load-percent')
+const isMobile         = window.innerWidth < 900
 
 let mainApp = null
+let isMuted = false
 
 // ── LOAD HOUSE SCENE ──────────────────────────────────────────────────────────
 setProgress(0)
@@ -59,6 +61,26 @@ mainApp
     setTimeout(() => dismissLoadingScreen(), 200)
   })
 
+// ── MUTE BUTTON ───────────────────────────────────────────────────────────────
+function initMuteButton() {
+  const btn = document.getElementById('mute-btn')
+  if (!btn) return
+  btn.addEventListener('click', () => {
+    isMuted = !isMuted
+    // Mute all audio elements inside the Spline canvas
+    const audioEls = document.querySelectorAll('audio, video')
+    audioEls.forEach(el => { el.muted = isMuted })
+    // Also try via Spline app if API supports it
+    if (mainApp && mainApp.setVariable) {
+      try { mainApp.setVariable('muted', isMuted) } catch(e) {}
+    }
+    btn.innerHTML = isMuted
+      ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`
+      : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
+    btn.title = isMuted ? 'Unmute' : 'Mute'
+  })
+}
+
 // ── DISMISS LOADING SCREEN ────────────────────────────────────────────────────
 function dismissLoadingScreen() {
   const loadingScreen = document.getElementById('loading-screen')
@@ -79,39 +101,32 @@ function dismissLoadingScreen() {
 
 // ── PAINT REVEAL HERO ─────────────────────────────────────────────────────────
 function initPaintReveal() {
-  const scratch   = document.getElementById('hero-scratch')
-  const ctx       = scratch.getContext('2d')
-  const hint      = document.getElementById('hero-hint')
-  const enterBtn  = document.getElementById('enter-forest-btn')
-  const colorLayer = document.getElementById('hero-color-layer')
+  const scratch    = document.getElementById('hero-scratch')
+  const ctx        = scratch.getContext('2d')
+  const hint       = document.getElementById('hero-hint')
+  const enterBtn   = document.getElementById('enter-forest-btn')
 
-  let hasStarted  = false
-  let revealed    = 0
-  let prevX       = null
-  let prevY       = null
-  let checkTimer  = 0
-  const BRUSH     = 120
+  let hasStarted = false
+  let prevX      = null
+  let prevY      = null
+  let checkTimer = 0
+  const BRUSH    = isMobile ? 130 : 180
 
   function resize() {
     const w = window.innerWidth
     const h = window.innerHeight
     scratch.width  = w
     scratch.height = h
-
-    // draw the BW image as the top layer
+    const bwSrc = isMobile ? '/images/hero-bw-mobile.png' : '/images/hero-bw.png'
     const img = new Image()
-    img.src = '/images/hero-bw.png'
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, w, h)
-    }
+    img.src = bwSrc
+    img.onload = () => ctx.drawImage(img, 0, 0, w, h)
   }
   resize()
   window.addEventListener('resize', resize)
 
   function paintBlob(x, y, size) {
     ctx.globalCompositeOperation = 'destination-out'
-
-    // main blob with feathered edge
     const grad = ctx.createRadialGradient(x, y, 0, x, y, size / 2)
     grad.addColorStop(0,    'rgba(0,0,0,1)')
     grad.addColorStop(0.45, 'rgba(0,0,0,1)')
@@ -122,14 +137,12 @@ function initPaintReveal() {
     ctx.beginPath()
     ctx.arc(x, y, size / 2, 0, Math.PI * 2)
     ctx.fill()
-
-    // bristle splatter for texture
     for (let i = 0; i < 10; i++) {
-      const angle  = Math.random() * Math.PI * 2
-      const dist   = size * 0.3 + Math.random() * size * 0.35
-      const fx     = x + Math.cos(angle) * dist
-      const fy     = y + Math.sin(angle) * dist
-      const fr     = size * (0.05 + Math.random() * 0.1)
+      const angle = Math.random() * Math.PI * 2
+      const dist  = size * 0.3 + Math.random() * size * 0.4
+      const fx    = x + Math.cos(angle) * dist
+      const fy    = y + Math.sin(angle) * dist
+      const fr    = size * (0.06 + Math.random() * 0.12)
       const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr)
       fg.addColorStop(0, 'rgba(0,0,0,0.8)')
       fg.addColorStop(1, 'rgba(0,0,0,0)')
@@ -138,17 +151,14 @@ function initPaintReveal() {
       ctx.arc(fx, fy, fr, 0, Math.PI * 2)
       ctx.fill()
     }
-
-    // horizontal streak — paint style
-    ctx.globalCompositeOperation = 'destination-out'
+    const streakLen = size * (0.7 + Math.random() * 0.6)
+    const streakDir = Math.random() > 0.5 ? 1 : -1
     ctx.beginPath()
-    ctx.lineWidth   = size * 0.55
+    ctx.lineWidth   = size * 0.6
     ctx.lineCap     = 'round'
     ctx.strokeStyle = 'rgba(0,0,0,0.85)'
-    const streakLen = size * (0.6 + Math.random() * 0.5)
-    const streakDir = Math.random() > 0.5 ? 1 : -1
-    ctx.moveTo(x - streakLen * 0.5 * streakDir, y + (Math.random() - 0.5) * 10)
-    ctx.lineTo(x + streakLen * 0.5 * streakDir, y + (Math.random() - 0.5) * 10)
+    ctx.moveTo(x - streakLen * 0.5 * streakDir, y + (Math.random() - 0.5) * 14)
+    ctx.lineTo(x + streakLen * 0.5 * streakDir, y + (Math.random() - 0.5) * 14)
     ctx.stroke()
   }
 
@@ -157,47 +167,40 @@ function initPaintReveal() {
       hasStarted = true
       hint.style.opacity = '0'
     }
-
     if (prevX !== null) {
       const dist  = Math.hypot(x - prevX, y - prevY)
       const steps = Math.ceil(dist / 6)
       for (let i = 0; i <= steps; i++) {
         const t  = i / steps
-        const ix = prevX + (x - prevX) * t
-        const iy = prevY + (y - prevY) * t
-        paintBlob(ix, iy, BRUSH)
+        paintBlob(prevX + (x - prevX) * t, prevY + (y - prevY) * t, BRUSH)
       }
     } else {
       paintBlob(x, y, BRUSH)
     }
     prevX = x
     prevY = y
-
     checkTimer++
-    if (checkTimer % 12 === 0) checkReveal()
+    if (checkTimer % 30 === 0) checkReveal()
   }
 
   function checkReveal() {
     const data = ctx.getImageData(0, 0, scratch.width, scratch.height).data
     let transparent = 0
-    const step = 4 * 16
+    const step = 4 * 40
     for (let i = 3; i < data.length; i += step) {
       if (data[i] < 100) transparent++
     }
-    revealed = (transparent / (data.length / (4 * 16))) * 100
-    if (revealed > 10 && !enterBtn.classList.contains('visible')) {
+    const pct = (transparent / (data.length / (4 * 40))) * 100
+    if (pct > 10 && !enterBtn.classList.contains('visible')) {
       enterBtn.classList.add('visible')
     }
   }
 
-  // mouse events
   scratch.addEventListener('mousemove', e => {
     const r = scratch.getBoundingClientRect()
     paintStroke(e.clientX - r.left, e.clientY - r.top)
   })
   scratch.addEventListener('mouseleave', () => { prevX = null; prevY = null })
-
-  // touch events
   scratch.addEventListener('touchmove', e => {
     e.preventDefault()
     const r = scratch.getBoundingClientRect()
@@ -219,7 +222,6 @@ function runFinalLoad(onComplete) {
   }
   if (finalBar)     finalBar.style.width     = '70%'
   if (finalPercent) finalPercent.textContent = '70%'
-
   let pct = 70
   const iv = setInterval(() => {
     pct = Math.min(pct + Math.random() * 6 + 3, 100)
@@ -246,18 +248,15 @@ function zoomWipeTransition(outEl, inEl) {
   inEl.style.opacity   = '1'
   inEl.style.transform = 'scale(1)'
   inEl.style.zIndex    = '1'
-
   outEl.style.position        = 'fixed'
   outEl.style.inset           = '0'
   outEl.style.zIndex          = '10'
   outEl.style.transformOrigin = 'center center'
   outEl.style.transition      = 'transform 1.1s cubic-bezier(0.4,0,0.2,1), opacity 0.9s ease'
-
   requestAnimationFrame(() => requestAnimationFrame(() => {
     outEl.style.transform = 'scale(1.18)'
     outEl.style.opacity   = '0'
   }))
-
   setTimeout(() => {
     outEl.style.display    = 'none'
     outEl.style.transform  = ''
@@ -265,12 +264,15 @@ function zoomWipeTransition(outEl, inEl) {
     outEl.style.transition = ''
     outEl.style.zIndex     = ''
     inEl.style.zIndex      = ''
+    initMuteButton()
+    initProximityBubble()
   }, 1100)
 }
 
 // ── BLUR ──────────────────────────────────────────────────────────────────────
 function showBlur() {
   document.getElementById('scene-blur-overlay')?.classList.add('active')
+  hideSpeechBubble()
 }
 function hideBlur() {
   document.getElementById('scene-blur-overlay')?.classList.remove('active')
@@ -285,7 +287,7 @@ function showInstructionModal() {
     bar.style.transition = 'none'
     bar.style.width      = '100%'
     bar.getBoundingClientRect()
-    bar.style.transition = 'width 3s linear'
+    bar.style.transition = 'width 6s linear'
     bar.style.width      = '0%'
   }
 }
@@ -304,7 +306,7 @@ function enterHouse() {
   setTimeout(() => {
     hideInstructionModal()
     runFinalLoad(() => zoomWipeTransition(heroScreen, mainScene))
-  }, 3000)
+  }, 6000)
 }
 
 document.getElementById('enter-forest-btn')?.addEventListener('click',       () => enterHouse())
@@ -432,6 +434,55 @@ const films = [
     ],
   },
 ]
+
+// ── PROXIMITY SPEECH BUBBLE ───────────────────────────────────────────────────
+const proximityMap = {
+  about:     { section: 'about',     message: "That's me! Come find out who I am~" },
+  skills:    { section: 'skills',    message: "My toolbox! Blender, Maya, the works~" },
+  films:     { section: 'films',     message: "Grab some popcorn, my films are in here!" },
+  contact:   { section: 'contact',   message: "Psst... want to work together? Come say hi!" },
+  portfolio: { section: 'portfolio', message: "My 3D work lives here — models, environments, and a fox with demon horns." },
+  resume:    { section: 'resume',    message: "Everything you need to know about me, one page, right here." },
+}
+
+let activeBubbleSection = null
+let bubbleTimeout       = null
+
+function initProximityBubble() {
+  // Use capture phase on window to fire before Spline swallows the keyup
+  window.addEventListener('keyup', (e) => {
+    if ((e.key === 'Enter' || e.code === 'Enter') && activeBubbleSection) {
+      e.preventDefault()
+      openPanel(activeBubbleSection)
+      setNav(activeBubbleSection)
+    }
+  }, true)
+
+  // Clicking the bubble box also opens the section
+  document.getElementById('speech-bubble-box')?.addEventListener('click', () => {
+    if (activeBubbleSection) {
+      openPanel(activeBubbleSection)
+      setNav(activeBubbleSection)
+    }
+  })
+}
+
+function showSpeechBubble(message, section) {
+  clearTimeout(bubbleTimeout)
+  activeBubbleSection = section
+  const bubble = document.getElementById('speech-bubble')
+  const msg    = document.getElementById('speech-bubble-msg')
+  if (!bubble || !msg) return
+  msg.textContent = message
+  bubble.classList.add('visible')
+}
+
+function hideSpeechBubble() {
+  activeBubbleSection = null
+  clearTimeout(bubbleTimeout)
+  const bubble = document.getElementById('speech-bubble')
+  if (bubble) bubble.classList.remove('visible')
+}
 
 // ── FILM DETAIL ───────────────────────────────────────────────────────────────
 let curFilmDetail = 0
@@ -564,25 +615,71 @@ function initCarousel(id, items, onClickFn) {
   if (!track) return
   const slides = track.querySelectorAll('.carousel-slide')
   const dots   = document.querySelectorAll(`#dots-${id} .carousel-dot`)
-  function goTo(i) {
-    slides[cur].classList.remove('active'); dots[cur].classList.remove('active')
+
+  function goTo(i, openItem = false) {
+    slides[cur].classList.remove('active')
+    dots[cur].classList.remove('active')
     cur = (i + items.length) % items.length
-    slides[cur].classList.add('active'); dots[cur].classList.add('active')
+    slides[cur].classList.add('active')
+    dots[cur].classList.add('active')
+    // Scroll the active slide into view smoothly
+    slides[cur].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    if (openItem) onClickFn(cur)
   }
-  document.getElementById(`prev-${id}`)?.addEventListener('click', () => goTo(cur - 1))
-  document.getElementById(`next-${id}`)?.addEventListener('click', () => goTo(cur + 1))
-  slides.forEach((s, i) => s.addEventListener('click', () => { goTo(i); onClickFn(i) }))
-  dots.forEach((d, i)   => d.addEventListener('click', () => goTo(i)))
+
+  document.getElementById(`prev-${id}`)?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    goTo(cur - 1)
+  })
+  document.getElementById(`next-${id}`)?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    goTo(cur + 1)
+  })
+
+  // Single click = go to that slide; double click = open
+  slides.forEach((s, i) => {
+    s.addEventListener('click', () => {
+      if (i === cur) {
+        onClickFn(i)
+      } else {
+        goTo(i)
+      }
+    })
+  })
+
+  dots.forEach((d, i) => d.addEventListener('click', (e) => {
+    e.stopPropagation()
+    goTo(i)
+  }))
+
+  // Touch/swipe support
+  let touchStartX = 0
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX }, { passive: true })
+  track.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? cur + 1 : cur - 1)
+  })
 }
 
-// ── SECTION DATA ──────────────────────────────────────────────────────────────
-const sectionBg = {
-  about:     '/images/About.png',
-  skills:    '/images/Tools.png',
-  resume:    '/images/Resume.png',
-  portfolio: '/images/Portfolio.png',
-  films:     '/images/Short Films.png',
-  contact:   '/images/BG.png',
+// ── SECTION BACKGROUNDS ───────────────────────────────────────────────────────
+function getSectionBg(section) {
+  const mobile = {
+    about:     '/images/About-mobile.png',
+    skills:    '/images/Tools-mobile.png',
+    resume:    '/images/Resume-mobile.png',
+    portfolio: '/images/Portfolio-mobile.png',
+    films:     '/images/Short-Films-mobile.png',
+    contact:   '/images/Contact-mobile.png',
+  }
+  const desktop = {
+    about:     '/images/About.png',
+    skills:    '/images/Tools.png',
+    resume:    '/images/Resume.png',
+    portfolio: '/images/Portfolio.png',
+    films:     '/images/Short Films.png',
+    contact:   '/images/Contact.png',
+  }
+  return isMobile ? (mobile[section] || desktop[section]) : desktop[section]
 }
 
 const sections = {
@@ -595,9 +692,9 @@ const sections = {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
   resume: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:400px;">
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:320px;">
       <a href="/images/Shivani Vinayak Pednekar_2026.pdf" target="_blank" rel="noopener noreferrer" class="resume-download-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
           <polyline points="15 3 21 3 21 9"/>
           <line x1="10" y1="14" x2="21" y2="3"/>
@@ -608,21 +705,21 @@ const sections = {
   },
   contact: {
     content: `<div style="padding:55px 30px 0 30px;">
-      <p style="color:#fff;font-size:15px;line-height:1.8;margin-bottom:14px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
+      <p style="color:#111;font-size:15px;line-height:1.8;margin-bottom:14px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
-        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
-        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.4);padding:8px 0;color:#fff;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
-        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(255,255,255,0.5);color:#fff;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
+        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
+        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
+        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
+        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(0,0,0,0.4);color:#111;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
       </div>
-      <div style="border-top:1px solid rgba(255,255,255,0.2);padding-top:12px;">
-        <p style="font-size:12px;letter-spacing:0.3em;color:#fff;font-weight:700;margin-bottom:10px;font-family:'Cinzel',serif;">FIND ME ON</p>
+      <div style="border-top:1px solid rgba(0,0,0,0.15);padding-top:12px;">
+        <p style="font-size:12px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:10px;font-family:'Cinzel',serif;">FIND ME ON</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
-          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
-          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
-          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
-          <a href="tel:5852903187" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:30px;padding:7px 14px;text-decoration:none;color:#fff;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
+          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
+          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
+          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
+          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
+          <a href="tel:5852903187" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
         </div>
       </div>
     </div>`
@@ -632,8 +729,9 @@ const sections = {
 // ── PANEL ─────────────────────────────────────────────────────────────────────
 function openPanel(section) {
   if (!sections[section]) return
+  hideSpeechBubble()
   const panel = document.getElementById('panel')
-  panel.style.backgroundImage = `url('${encodeURI(sectionBg[section])}')`
+  panel.style.backgroundImage = `url('${encodeURI(getSectionBg(section))}')`
   document.getElementById('panel-content').innerHTML =
     `<div class="panel-body panel-body--no-title">${sections[section].content}</div>`
   panel.classList.remove('hidden')
@@ -725,19 +823,74 @@ function sendContact() {
   window.location.href = `mailto:shivanipednekar87@gmail.com?subject=${encodeURIComponent(`Portfolio Contact from ${n}`)}&body=${encodeURIComponent(`${m}\n\nFrom: ${e}`)}`
 }
 
-// ── SPLINE CLICK EVENTS ───────────────────────────────────────────────────────
+// ── SPLINE CLICK + PROXIMITY EVENTS ──────────────────────────────────────────
+// Exact Spline object names from the scene
+const SPLINE_OBJECTS = [
+  { name: 'Shortfilm',  section: 'films'     },
+  { name: 'About Me',   section: 'about'     },
+  { name: 'Skills',     section: 'skills'    },
+  { name: 'Contact',    section: 'contact'   },
+  { name: 'Portfolio',  section: 'portfolio' },
+  { name: 'Resume',     section: 'resume'    },
+]
+const PROXIMITY_THRESHOLD = 350 // units — adjust if needed
+let   proximityLoop        = null
+let   lastNearSection      = null
+
 function attachMainEvents() {
+  // ── Click to open panel ────────────────────────────────────────────────────
   mainApp.addEventListener('mouseDown', (e) => {
-    const name = e?.target?.name?.toLowerCase()
-    if (!name) return
-    console.log('Spline click:', name)
-    if (name.includes('about'))                                      openPanel('about')
-    else if (name.includes('skill'))                                 openPanel('skills')
-    else if (name.includes('short') || name.includes('film'))        openPanel('films')
-    else if (name.includes('contact'))                               openPanel('contact')
-    else if (name.includes('portfolio'))                             openPanel('portfolio')
-    else if (name.includes('resume'))                                openPanel('resume')
+    const name = e?.target?.name?.toLowerCase() || ''
+    console.log('[Spline click]', name)
+    if (name.includes('about'))                              openPanel('about')
+    else if (name.includes('skill'))                         openPanel('skills')
+    else if (name.includes('short') || name.includes('film')) openPanel('films')
+    else if (name.includes('contact'))                       openPanel('contact')
+    else if (name.includes('portfolio'))                     openPanel('portfolio')
+    else if (name.includes('resume'))                        openPanel('resume')
   })
+
+  // ── Position polling — check pig vs each section object every 200ms ────────
+  function checkProximity() {
+    try {
+      const pig = mainApp.findObjectByName('pig')
+      if (!pig) return
+
+      const px = pig.position.x
+      const py = pig.position.y
+      const pz = pig.position.z
+
+      let nearest     = null
+      let nearestDist = Infinity
+
+      for (const obj of SPLINE_OBJECTS) {
+        const target = mainApp.findObjectByName(obj.name)
+        if (!target) continue
+        const dx   = px - target.position.x
+        const dy   = py - target.position.y
+        const dz   = pz - target.position.z
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz)
+        if (dist < PROXIMITY_THRESHOLD && dist < nearestDist) {
+          nearestDist = dist
+          nearest     = obj
+        }
+      }
+
+      if (nearest && nearest.section !== lastNearSection) {
+        lastNearSection = nearest.section
+        const entry = proximityMap[nearest.section]
+        const msg   = entry ? entry.message : ''
+        showSpeechBubble(msg, nearest.section)
+      } else if (!nearest && lastNearSection) {
+        lastNearSection = null
+        hideSpeechBubble()
+      }
+    } catch(err) {
+      // silently ignore if objects not found yet
+    }
+  }
+
+  proximityLoop = setInterval(checkProximity, 200)
 }
 
 // ── GLOBAL EXPORTS ────────────────────────────────────────────────────────────
