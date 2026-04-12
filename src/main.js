@@ -435,21 +435,63 @@ const films = [
   },
 ]
 
-// ── PROXIMITY SPEECH BUBBLE ───────────────────────────────────────────────────
-const proximityMap = {
-  about:     { section: 'about',     message: "That's me! Come find out who I am~" },
-  skills:    { section: 'skills',    message: "My toolbox! Blender, Maya, the works~" },
-  films:     { section: 'films',     message: "Grab some popcorn, my films are in here!" },
-  contact:   { section: 'contact',   message: "Psst... want to work together? Come say hi!" },
-  portfolio: { section: 'portfolio', message: "My 3D work lives here — models, environments, and a fox with demon horns." },
-  resume:    { section: 'resume',    message: "Everything you need to know about me, one page, right here." },
-}
+// ── RANDOM ROTATING TIPS ─────────────────────────────────────────────────────
+const tips = [
+  { msg: "Hey! Wanna know about me? Find this little guy in the backyard!", emoji: '🐕', section: 'about' },
+  { msg: "Curious about my skills? Look for this in the office!", emoji: '🖥️', section: 'skills' },
+  { msg: "Wanna see my 3D work? Find this easel in the pink room!", emoji: '🎨', section: 'portfolio' },
+  { msg: "My short films are hiding near this camera — go find it!", emoji: '🎬', section: 'films' },
+  { msg: "Need my resume? Find the work experience board in the kitchen!", emoji: '📋', section: 'resume' },
+  { msg: "Want to reach out? The telephone in the living room is waiting!", emoji: '☎️', section: 'contact' },
+]
 
 let activeBubbleSection = null
 let bubbleTimeout       = null
+let tipInterval         = null
+let lastTipIndex        = -1
+
+function getRandomTip() {
+  let idx
+  do { idx = Math.floor(Math.random() * tips.length) } while (idx === lastTipIndex)
+  lastTipIndex = idx
+  return tips[idx]
+}
+
+function showTip(tip) {
+  activeBubbleSection = tip.section
+  const bubble  = document.getElementById('speech-bubble')
+  const msg     = document.getElementById('speech-bubble-msg')
+  const objEl   = document.getElementById('speech-bubble-obj')
+  if (!bubble || !msg) return
+  msg.textContent = tip.msg
+  if (objEl) objEl.textContent = tip.emoji
+  bubble.classList.add('visible')
+}
+
+function hideSpeechBubble() {
+  activeBubbleSection = null
+  const bubble = document.getElementById('speech-bubble')
+  if (bubble) bubble.classList.remove('visible')
+}
+
+function startTipCycle() {
+  // Show first tip after 3 seconds
+  bubbleTimeout = setTimeout(() => {
+    showTip(getRandomTip())
+    // Show for 10s, hide for 4s, repeat
+    tipInterval = setInterval(() => {
+      hideSpeechBubble()
+      setTimeout(() => {
+        if (document.getElementById('panel')?.classList.contains('hidden')) {
+          showTip(getRandomTip())
+        }
+      }, 4000)
+    }, 14000) // 10s visible + 4s hidden = 14s cycle
+  }, 3000)
+}
 
 function initProximityBubble() {
-  // Use capture phase on window to fire before Spline swallows the keyup
+  // Enter key opens active section
   window.addEventListener('keyup', (e) => {
     if ((e.key === 'Enter' || e.code === 'Enter') && activeBubbleSection) {
       e.preventDefault()
@@ -458,30 +500,24 @@ function initProximityBubble() {
     }
   }, true)
 
-  // Clicking the bubble box also opens the section
+  // Click on bubble box opens section
   document.getElementById('speech-bubble-box')?.addEventListener('click', () => {
     if (activeBubbleSection) {
       openPanel(activeBubbleSection)
       setNav(activeBubbleSection)
     }
   })
+
+  startTipCycle()
 }
 
 function showSpeechBubble(message, section) {
-  clearTimeout(bubbleTimeout)
   activeBubbleSection = section
   const bubble = document.getElementById('speech-bubble')
   const msg    = document.getElementById('speech-bubble-msg')
   if (!bubble || !msg) return
   msg.textContent = message
   bubble.classList.add('visible')
-}
-
-function hideSpeechBubble() {
-  activeBubbleSection = null
-  clearTimeout(bubbleTimeout)
-  const bubble = document.getElementById('speech-bubble')
-  if (bubble) bubble.classList.remove('visible')
 }
 
 // ── FILM DETAIL ───────────────────────────────────────────────────────────────
@@ -686,13 +722,13 @@ const sections = {
   about:    { content: `` },
   skills:   { content: `` },
   portfolio: {
-    content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`
+    content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`
   },
   films: {
-    content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:20px;">${makeCarousel(films, 'carousel-films')}</div>`
+    content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
   resume: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:320px;">
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '30%'};">
       <a href="/images/Shivani Vinayak Pednekar_2026.pdf" target="_blank" rel="noopener noreferrer" class="resume-download-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -704,22 +740,22 @@ const sections = {
     </div>`
   },
   contact: {
-    content: `<div style="padding:20px 16px 0 16px;">
-      <p style="color:#111;font-size:13px;line-height:1.6;margin-bottom:12px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
-        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
-        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
-        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
-        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(0,0,0,0.4);color:#111;padding:8px 24px;border-radius:30px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:0.15em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
+    content: `<div style="padding:0 10px;">
+      <p style="color:#111;font-size:12px;line-height:1.5;margin-bottom:8px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
+        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.25);padding:5px 0;color:#111;font-family:'Cinzel',serif;font-size:12px;font-weight:600;outline:none;width:100%;"/>
+        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.25);padding:5px 0;color:#111;font-family:'Cinzel',serif;font-size:12px;font-weight:600;outline:none;width:100%;"/>
+        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.25);padding:5px 0;color:#111;font-family:'Cinzel',serif;font-size:12px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
+        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(0,0,0,0.35);color:#111;padding:6px 22px;border-radius:30px;font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:0.12em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
       </div>
-      <div style="border-top:1px solid rgba(0,0,0,0.15);padding-top:10px;">
-        <p style="font-size:10px;letter-spacing:0.25em;color:#111;font-weight:700;margin-bottom:8px;font-family:'Cinzel',serif;">FIND ME ON</p>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
-          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
-          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
-          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
-          <a href="tel:5852903187" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
+      <div style="border-top:1px solid rgba(0,0,0,0.1);padding-top:8px;">
+        <p style="font-size:10px;letter-spacing:0.2em;color:#111;font-weight:700;margin-bottom:6px;font-family:'Cinzel',serif;">FIND ME ON</p>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:4px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
+          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:4px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
+          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:4px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
+          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:4px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
+          <a href="tel:5852903187" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:4px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
         </div>
       </div>
     </div>`

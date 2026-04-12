@@ -52,6 +52,11 @@
             <button id="enter-forest-btn" type="button">Step Inside</button>
           </div>
         </div>
+        <script>
+          if (window.innerWidth < 900) {
+            document.getElementById('hero-hint').textContent = 'Scratch to reveal'
+          }
+        </script>
 
         <div id="instruction-modal" aria-hidden="true">
           <div id="instruction-backdrop"></div>
@@ -68,14 +73,17 @@
         <canvas id="spline-forest"></canvas>
         <div id="scene-blur-overlay"></div>
 
-        <!-- SPEECH BUBBLE (proximity) -->
+        <!-- SPEECH BUBBLE (random tips) -->
         <div id="speech-bubble">
           <div id="speech-bubble-inner">
-            <img id="speech-bubble-char" src="/images/Text bubble.png" alt="Shivani character" />
             <div id="speech-bubble-box">
               <p id="speech-bubble-msg"></p>
-              <span id="speech-bubble-hint">Tap to open</span>
+              <div id="speech-bubble-footer">
+                <span id="speech-bubble-obj" style="font-size:28px;line-height:1;"></span>
+                <span id="speech-bubble-hint">Tap to open</span>
+              </div>
             </div>
+            <img id="speech-bubble-char" src="/images/Text bubble.png" alt="Shivani" />
           </div>
         </div>
 
