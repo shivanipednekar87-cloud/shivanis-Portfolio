@@ -740,7 +740,7 @@ const sections = {
     </div>`
   },
   contact: {
-    content: `<div style="padding:0 10px;">
+    content: `<div style="padding:${window.innerWidth < 900 ? '0 10px' : '0 10px'}; margin-top:${window.innerWidth < 900 ? '0px' : '0px'}">
       <p style="color:#111;font-size:12px;line-height:1.5;margin-bottom:8px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
       <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
         <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.25);padding:5px 0;color:#111;font-family:'Cinzel',serif;font-size:12px;font-weight:600;outline:none;width:100%;"/>

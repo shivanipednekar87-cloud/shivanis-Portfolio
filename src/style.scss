@@ -627,8 +627,7 @@ body {
   height: 82vh;
   max-height: 88vh;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   background: url('/images/BG.png') center center / contain no-repeat;
   background-size: contain;
   padding: 8% 10% 5% 10%;
@@ -1276,7 +1275,7 @@ body {
   /* ── Instruction image ── */
   #instruction-card { width: 96vw; aspect-ratio: 16/9; padding: 0; }
 
-  /* ── Panel: full screen, proper scroll ── */
+  /* ── Panel: full screen, no scroll ── */
   #panel {
     width: 100vw;
     left: 50%;
@@ -1285,13 +1284,16 @@ body {
     min-height: 0;
     height: 88vh;
     max-height: 88vh;
-    padding: 60px 4% 24px 4%;
+    padding: 25% 4% 24px 4%;
     background-size: 100% 100%;
-    overflow-y: auto;
+    overflow: hidden;
     border-radius: 0;
   }
 
-  .panel-body--no-title { margin: 8px auto 0; width: 100%; }
+  .panel-body--no-title { margin: 0 auto; width: 100%; }
+
+  /* ── Speech bubble stays at very bottom ── */
+  #speech-bubble { padding-bottom: 90px; }
 
   /* ── Close button — top right, smaller, no overlap with menu ── */
   #panel-close { top: 6px; right: 6px; }
@@ -1308,10 +1310,7 @@ body {
   .carousel-btn { width: 34px; height: 34px; font-size: 13px; }
   .carousel-dot { width: 6px; height: 6px; }
 
-  /* ── Contact panel — compact, starts below header ── */
-  #panel .panel-body--no-title > div {
-    padding: 120px 0 0 0 !important;
-  }
+  /* ── Contact panel — uses panel padding-top ── */
 
   /* ── Resume button — smaller on mobile ── */
   .resume-download-btn {
