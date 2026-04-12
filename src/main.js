@@ -704,22 +704,22 @@ const sections = {
     </div>`
   },
   contact: {
-    content: `<div style="padding:55px 30px 0 30px;">
-      <p style="color:#111;font-size:15px;line-height:1.8;margin-bottom:14px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
-        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;"/>
-        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:8px 0;color:#111;font-family:'Cinzel',serif;font-size:15px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
-        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(0,0,0,0.4);color:#111;padding:10px 32px;border-radius:30px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;letter-spacing:0.2em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
+    content: `<div style="padding:20px 16px 0 16px;">
+      <p style="color:#111;font-size:13px;line-height:1.6;margin-bottom:12px;font-family:'Cinzel',serif;font-weight:600;">I'm seeking opportunities in animation, film, and creative production.</p>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+        <input type="text" id="contact-name" placeholder="Your Name" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
+        <input type="email" id="contact-email" placeholder="Your Email" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;"/>
+        <textarea id="contact-message" placeholder="Your Message" rows="2" style="background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,0.3);padding:6px 0;color:#111;font-family:'Cinzel',serif;font-size:13px;font-weight:600;outline:none;width:100%;resize:none;"></textarea>
+        <button onclick="sendContact()" style="background:transparent;border:1px solid rgba(0,0,0,0.4);color:#111;padding:8px 24px;border-radius:30px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:0.15em;cursor:pointer;align-self:center;margin-top:4px;">SEND MESSAGE</button>
       </div>
-      <div style="border-top:1px solid rgba(0,0,0,0.15);padding-top:12px;">
-        <p style="font-size:12px;letter-spacing:0.3em;color:#111;font-weight:700;margin-bottom:10px;font-family:'Cinzel',serif;">FIND ME ON</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
-          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
-          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
-          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
-          <a href="tel:5852903187" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:7px 14px;text-decoration:none;color:#111;font-size:13px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
+      <div style="border-top:1px solid rgba(0,0,0,0.15);padding-top:10px;">
+        <p style="font-size:10px;letter-spacing:0.25em;color:#111;font-weight:700;margin-bottom:8px;font-family:'Cinzel',serif;">FIND ME ON</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <a href="mailto:shivanipednekar87@gmail.com" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Email</a>
+          <a href="https://www.linkedin.com/in/shivani-vinayak-pednekar/" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">LinkedIn</a>
+          <a href="https://youtu.be/UZv9RJm6PGs" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Animation Reel</a>
+          <a href="https://youtu.be/UdS8FCdfNa0" target="_blank" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">Demo Reel</a>
+          <a href="tel:5852903187" style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.2);border-radius:30px;padding:5px 10px;text-decoration:none;color:#111;font-size:11px;font-family:'Cinzel',serif;font-weight:600;">(585) 290-3187</a>
         </div>
       </div>
     </div>`

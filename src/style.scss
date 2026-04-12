@@ -1237,19 +1237,17 @@ body {
   #mobile-nav   { display: block !important; }
 
   #hero-screen,
-  #hero-scratch {
-    cursor: url('/images/Brush.png') 0 32, crosshair;
-  }
+  #hero-scratch { cursor: crosshair; }
 
   #hero-color-layer {
     background-image: url('/images/hero-color-mobile.png');
     background-size: 100% 100%;
   }
 
-  #hero-hint { font-size: 13px; letter-spacing: 0.25em; }
+  #hero-hint { font-size: 12px; letter-spacing: 0.2em; }
 
-  #enter-forest-wrap { width: 280px; height: 72px; }
-  #enter-forest-btn  { font-size: 13px; padding: 6px 20px; margin-top: 6px; }
+  #enter-forest-wrap { margin-top: 8px; }
+  #enter-forest-btn  { font-size: 11px; padding: 7px 18px; }
 
   #loading-progress { bottom: 32px; }
   #loading-bar-wrap { width: 140px; }
@@ -1258,68 +1256,101 @@ body {
   #final-load-bar-wrap { width: 140px; }
   #final-load-percent  { font-size: 16px; }
 
-  #scroll-hint      { bottom: 16px; }
-  #scroll-hint-text { font-size: 10px; }
+  /* ── WASD hint hidden on mobile (joystick instead) ── */
+  #scroll-hint { display: none; }
 
-  #instruction-card    { padding: 36px 24px 32px; }
-  #instruction-title   { font-size: 18px; }
-  .instruction-row     { font-size: 13px; }
-  .instruction-object img { width: 56px; height: 56px; }
-  #instruction-objects { gap: 10px; max-width: 100%; }
+  /* ── Instruction image ── */
+  #instruction-card { width: 96vw; aspect-ratio: 16/9; padding: 0; }
 
-  #panel { width: 96vw; top: 50%; min-height: 0; height: 88vh; max-height: 88vh; padding: 70px 4% 32px 4%; background-size: 100% 100%; }
-  .panel-body--no-title { margin: 16px auto 0; width: 100%; }
-  #panel-close { top: 8px; right: 10px; }
-  #panel-close img { width: 64px; height: 64px; }
+  /* ── Panel: full screen, proper scroll ── */
+  #panel {
+    width: 100vw;
+    left: 0;
+    transform: translateY(-50%);
+    top: 50%;
+    min-height: 0;
+    height: 90vh;
+    max-height: 90vh;
+    padding: 60px 4% 24px 4%;
+    background-size: 100% 100%;
+    overflow-y: auto;
+    border-radius: 0;
+  }
 
-  .carousel-container { width: 100%; }
-  .carousel-slide     { min-width: 78%; max-width: 78%; }
-  .carousel-slide img { height: 140px; }
-  .carousel-slide-info { padding: 8px 12px; }
-  .card-title   { font-size: 12px; }
-  .card-desc    { font-size: 10px; }
-  .carousel-btn { width: 32px; height: 32px; font-size: 12px; }
+  .panel-body--no-title { margin: 8px auto 0; width: 100%; }
 
+  /* ── Close button — top right, smaller, no overlap with menu ── */
+  #panel-close { top: 6px; right: 6px; }
+  #panel-close img { width: 44px; height: 44px; }
+
+  /* ── Carousel — full width, single card visible ── */
+  .carousel-container { width: 100%; padding: 0 0 16px; }
+  .carousel-track     { gap: 10px; padding: 4px 4px 8px; }
+  .carousel-slide     { min-width: 86%; max-width: 86%; border-radius: 10px; }
+  .carousel-slide img { height: 160px; object-fit: cover; }
+  .carousel-slide-info { padding: 10px 12px; }
+  .card-title   { font-size: 13px; font-weight: 700; color: #111; }
+  .card-desc    { font-size: 11px; color: #444; }
+  .carousel-btn { width: 34px; height: 34px; font-size: 13px; }
+  .carousel-dot { width: 6px; height: 6px; }
+
+  /* ── Contact panel — compact ── */
+  #panel .panel-body--no-title > div {
+    padding: 12px 0 0 0 !important;
+  }
+
+  /* ── Resume button — smaller on mobile ── */
+  .resume-download-btn {
+    font-size: 11px !important;
+    padding: 10px 22px !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  /* ── Project overlay ── */
   #project-overlay { align-items: flex-start; overflow-y: auto; }
-  #project-layout  { grid-template-columns: 1fr; padding: 56px 16px 40px; gap: 20px; width: 100%; }
+  #project-layout  { grid-template-columns: 1fr; padding: 56px 16px 40px; gap: 16px; width: 100%; }
   #project-layout .project-arrow { display: none; }
-  #project-left img { max-height: 40vw; min-height: 180px; object-fit: cover; border-radius: 10px; }
+  #project-left img { max-height: 42vw; min-height: 160px; object-fit: cover; border-radius: 10px; }
   #project-right    { max-height: none; overflow-y: visible; padding-right: 0; }
-  #project-title    { font-size: clamp(18px, 5vw, 24px); margin-bottom: 14px; }
+  #project-title    { font-size: clamp(16px, 5vw, 22px); margin-bottom: 12px; }
   #project-subtitle { font-size: 9px; }
-  #project-desc p   { font-size: 13px; line-height: 1.8; }
-  #project-close    { top: 10px; left: 10px; width: 38px; height: 38px; }
+  #project-desc p   { font-size: 12px; line-height: 1.8; }
+  #project-close    { top: 10px; right: 10px; left: auto; }
+  #project-close img { width: 44px; height: 44px; }
 
-  #film-detail-inner    { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; padding-top: 60px; }
-  #film-detail-left-img { flex: none; width: 100%; height: auto; padding: 20px 20px 0; gap: 10px; }
-  #film-detail-left-img > img { max-height: 40vw; min-height: 160px; width: 100%; border-radius: 10px; }
-  #film-detail-grid-left { max-width: 100%; gap: 6px; }
-  #film-detail-content  { flex: none; width: 100%; min-height: auto; padding: 24px 20px 40px; }
-  #film-detail-title    { font-size: clamp(18px, 5vw, 26px); margin-bottom: 14px; }
-  #film-detail-body p   { font-size: 13px; line-height: 1.8; }
+  /* ── Film detail ── */
+  #film-detail-inner    { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; padding-top: 56px; }
+  #film-detail-left-img { flex: none; width: 100%; height: auto; padding: 16px 16px 0; gap: 8px; }
+  #film-detail-left-img > img { max-height: 42vw; min-height: 140px; width: 100%; border-radius: 10px; }
+  #film-detail-grid-left { max-width: 100%; gap: 5px; }
+  #film-detail-content  { flex: none; width: 100%; min-height: auto; padding: 20px 16px 40px; }
+  #film-detail-title    { font-size: clamp(16px, 5vw, 24px); margin-bottom: 12px; }
+  #film-detail-body p   { font-size: 12px; line-height: 1.8; }
   .film-detail-arrow    { width: 34px; height: 34px; font-size: 13px; left: 6px; }
   .film-detail-arrow--right { right: 6px; left: auto; }
-  #film-detail-close    { top: 10px; left: 10px; width: 38px; height: 38px; }
+  #film-detail-close    { top: 10px; right: 10px; left: auto; width: 38px; height: 38px; }
+  #film-detail-close img { width: 38px; height: 38px; }
 
+  /* ── Lightbox ── */
   #lightbox-img   { max-width: 96vw; max-height: 62vh; }
   #lightbox-prev  { left: 6px; width: 36px; height: 36px; }
   #lightbox-next  { right: 6px; width: 36px; height: 36px; }
   #lightbox-close { transform: translate(48vw, calc(-31vh - 28px)); width: 36px; height: 36px; }
 
-  #speech-bubble  { padding-bottom: 16px; }
-  #speech-bubble-char { width: 80px; height: 80px; }
-  #speech-bubble-box  { padding: 14px 18px; }
-  #speech-bubble-msg  { font-size: 13px; }
-  #speech-bubble-hint { font-size: 10px; }
+  /* ── Speech bubble ── */
+  #speech-bubble       { padding-bottom: 12px; }
+  #speech-bubble-inner { gap: 10px; width: 94%; }
+  #speech-bubble-char  { width: 70px; height: 70px; }
+  #speech-bubble-box   { padding: 12px 16px; }
+  #speech-bubble-msg   { font-size: 12px; margin-bottom: 4px; }
+  #speech-bubble-hint  { font-size: 9px; }
 }
 
 @media (max-width: 480px) {
-  #panel { height: 92vh; max-height: 92vh; padding: 64px 3% 28px 3%; }
-  .carousel-slide     { min-width: 88%; max-width: 88%; }
-  .carousel-slide img { height: 120px; }
-  #project-left img   { max-height: 35vw; }
+  #panel { height: 92vh; max-height: 92vh; padding: 56px 3% 20px 3%; }
+  .carousel-slide     { min-width: 90%; max-width: 90%; }
+  .carousel-slide img { height: 140px; }
+  #project-left img   { max-height: 38vw; }
   #film-detail-body p { font-size: 12px; }
-  #instruction-card   { padding: 32px 16px 28px; }
-  #instruction-title  { font-size: 16px; }
-  #enter-forest-wrap  { width: 240px; height: 60px; }
+  #enter-forest-btn   { font-size: 10px; padding: 6px 16px; }
 }
