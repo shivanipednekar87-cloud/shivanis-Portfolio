@@ -461,7 +461,6 @@ body {
 }
 
 /* ── DESKTOP NAV ─────────────────────────────────────────────────────────────── */
-
 #forest-nav {
   position: fixed;
   top: 16px;
@@ -469,13 +468,14 @@ body {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   z-index: 100;
-  background: url('/images/NavBar.png') center 20% / 100% 100% no-repeat;
-  padding: 90px 190px;
+  background: url('/images/NavBar.png') center center / 100% 100% no-repeat;
+  padding: 40px 100px;
   white-space: nowrap;
   min-width: 780px;
-  height: 170px;
+  height: 120px;
 }
 
 .nav-dot {
