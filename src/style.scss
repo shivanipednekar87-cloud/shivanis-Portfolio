@@ -493,7 +493,6 @@ body {
   white-space: nowrap;
 }
 
-/* BLACK accent on hover/active instead of green */
 .nav-dot:hover  { background: rgba(0, 0, 0, 0.12); color: #111; }
 .nav-dot.active { background: rgba(0, 0, 0, 0.15); color: #111; }
 
@@ -576,7 +575,6 @@ body {
   transition: all 0.2s ease;
 }
 
-/* BLACK accent on mobile nav */
 .mobile-nav-item:hover,
 .mobile-nav-item.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
 
@@ -628,9 +626,8 @@ body {
   max-height: 88vh;
   min-height: 0;
   overflow: hidden;
-  background: url('/images/BG.png') center center / contain no-repeat;
-  background-size: contain;
-  padding: 8% 10% 5% 10%;
+  background: url('/images/BG.png') center 40% / cover no-repeat;
+  padding: 12% 10% 5% 10%;
   z-index: 200;
   color: white;
   scrollbar-width: none;
@@ -671,7 +668,7 @@ body {
   color: rgba(255, 255, 255, 0.8);
   font-size: 16px;
   line-height: 1.8;
-  margin: 60px auto 0;
+  margin: 20px auto 0;
   width: 86%;
   display: flex;
   flex-direction: column;
@@ -705,7 +702,6 @@ body {
 
 .card:hover { background: rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.3); }
 
-/* BLACK text on carousel cards */
 .card-title { font-size: 14px; color: #111; margin-bottom: 4px; letter-spacing: 0.05em; }
 .card-desc  { font-size: 12px; color: #444; letter-spacing: 0.05em; }
 
@@ -757,7 +753,6 @@ body {
 .carousel-slide img    { width: 100%; height: 160px; object-fit: cover; display: block; transition: transform 0.3s ease; }
 .carousel-slide:hover img { transform: scale(1.04); }
 
-/* BLACK text inside slide info */
 .carousel-slide-info   { padding: 12px 16px; background: rgba(255,255,255,0.9); }
 .carousel-slide-info .card-title { color: #111; }
 .carousel-slide-info .card-desc  { color: #444; }
@@ -784,7 +779,6 @@ body {
 
 .carousel-btn:hover { background: rgba(0, 0, 0, 0.18); }
 
-/* BLACK carousel dots */
 .carousel-dots      { display: flex; gap: 8px; }
 
 .carousel-dot {
@@ -898,7 +892,6 @@ body {
 
 .project-arrow:hover { background: rgba(255, 255, 255, 0.2); }
 
-/* ── PROJECT CLOSE — TOP RIGHT, bigger, no circle bg ────────────────────────── */
 #project-close {
   position: fixed;
   top: 16px;
@@ -1269,57 +1262,84 @@ body {
   #final-load-bar-wrap { width: 140px; }
   #final-load-percent  { font-size: 16px; }
 
-  /* ── WASD hint hidden on mobile (joystick instead) ── */
   #scroll-hint { display: none; }
 
-  /* ── Instruction image ── */
   #instruction-card { width: 96vw; aspect-ratio: 16/9; padding: 0; }
 
-  /* ── Panel: full screen, no scroll ── */
+  /* ── Panel: mobile ── */
   #panel {
-    width: 100vw;
+    width: 92vw;
     left: 50%;
     transform: translate(-50%, -50%);
     top: 50%;
     min-height: 0;
-    height: 88vh;
-    max-height: 88vh;
-    padding: 25% 4% 24px 4%;
-    background-size: 100% 100%;
+    height: 80vh;
+    max-height: 80vh;
+    padding: 38% 6% 20px 6%;
+    background-size: cover;
+    background-position: center center;
     overflow: hidden;
     border-radius: 0;
   }
 
   .panel-body--no-title { margin: 0 auto; width: 100%; }
 
-  /* ── Speech bubble stays at very bottom ── */
   #speech-bubble { padding-bottom: 90px; }
 
-  /* ── Close button — top right, smaller, no overlap with menu ── */
   #panel-close { top: 6px; right: 6px; }
   #panel-close img { width: 44px; height: 44px; }
 
-  /* ── Carousel — full width, single card visible ── */
-  .carousel-container { width: 100%; padding: 0 0 16px; margin-top: 0; }
-  .carousel-track     { gap: 10px; padding: 4px 4px 8px; }
-  .carousel-slide     { min-width: 86%; max-width: 86%; border-radius: 10px; }
-  .carousel-slide img { height: 160px; object-fit: cover; }
-  .carousel-slide-info { padding: 10px 12px; }
-  .card-title   { font-size: 13px; font-weight: 700; color: #111; }
-  .card-desc    { font-size: 11px; color: #444; }
-  .carousel-btn { width: 34px; height: 34px; font-size: 13px; }
-  .carousel-dot { width: 6px; height: 6px; }
+  /* ── Mobile carousel — vertical scrollable list ── */
+  .carousel-container {
+    width: 100%;
+    padding: 0 0 12px;
+    margin-top: 0;
+  }
 
-  /* ── Contact panel — uses panel padding-top ── */
+  .carousel-track {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 52vh;
+    scroll-snap-type: y mandatory;
+    gap: 10px;
+    padding: 4px 2px 8px;
+  }
 
-  /* ── Resume button — smaller on mobile ── */
-  .resume-download-btn {
+  .carousel-slide {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    border-radius: 10px;
+    opacity: 1;
+  }
+
+  .carousel-slide.active {
+    border-color: rgba(0, 0, 0, 0.35);
+  }
+
+  .carousel-slide img {
+    height: 130px;
+    object-fit: cover;
+  }
+
+  .carousel-slide-info { padding: 8px 12px; }
+  .card-title { font-size: 12px; font-weight: 700; color: #111; }
+  .card-desc  { font-size: 10px; color: #444; }
+
+  /* hide nav buttons on mobile — scrolling replaces them */
+  .carousel-nav { display: none; }
+
+  /* ── Resume button — push down on mobile ── */
+  #panel .resume-download-btn {
+    margin-top: 50px;
     font-size: 11px !important;
     padding: 10px 22px !important;
     letter-spacing: 0.1em !important;
   }
 
-  /* ── Project overlay ── */
   #project-overlay { align-items: flex-start; overflow-y: auto; }
   #project-layout  { grid-template-columns: 1fr; padding: 56px 16px 40px; gap: 16px; width: 100%; }
   #project-layout .project-arrow { display: none; }
@@ -1331,7 +1351,6 @@ body {
   #project-close    { top: 10px; right: 10px; left: auto; }
   #project-close img { width: 44px; height: 44px; }
 
-  /* ── Film detail ── */
   #film-detail-inner    { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; padding-top: 56px; }
   #film-detail-left-img { flex: none; width: 100%; height: auto; padding: 16px 16px 0; gap: 8px; }
   #film-detail-left-img > img { max-height: 42vw; min-height: 140px; width: 100%; border-radius: 10px; }
@@ -1344,13 +1363,11 @@ body {
   #film-detail-close    { top: 10px; right: 10px; left: auto; width: 38px; height: 38px; }
   #film-detail-close img { width: 38px; height: 38px; }
 
-  /* ── Lightbox ── */
   #lightbox-img   { max-width: 96vw; max-height: 62vh; }
   #lightbox-prev  { left: 6px; width: 36px; height: 36px; }
   #lightbox-next  { right: 6px; width: 36px; height: 36px; }
   #lightbox-close { transform: translate(48vw, calc(-31vh - 28px)); width: 36px; height: 36px; }
 
-  /* ── Speech bubble ── */
   #speech-bubble       { padding-bottom: 12px; }
   #speech-bubble-inner { width: 96%; }
   #speech-bubble-char  { width: 75px; height: 75px; }
@@ -1361,9 +1378,14 @@ body {
 }
 
 @media (max-width: 480px) {
-  #panel { height: 92vh; max-height: 92vh; padding: 56px 3% 20px 3%; }
-  .carousel-slide     { min-width: 90%; max-width: 90%; }
-  .carousel-slide img { height: 140px; }
+  #panel {
+    height: 85vh;
+    max-height: 85vh;
+    padding: 40% 5% 20px 5%;
+    width: 94vw;
+  }
+  .carousel-track     { max-height: 48vh; }
+  .carousel-slide img { height: 120px; }
   #project-left img   { max-height: 38vw; }
   #film-detail-body p { font-size: 12px; }
   #enter-forest-btn   { font-size: 10px; padding: 6px 16px; }
