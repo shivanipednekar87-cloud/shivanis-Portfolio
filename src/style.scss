@@ -1264,7 +1264,12 @@ body {
 
   #scroll-hint { display: none; }
 
-  #instruction-card { width: 96vw; aspect-ratio: 16/9; padding: 0; }
+  /* ── Mobile instruction card: portrait mode ── */
+  #instruction-card {
+    width: min(90vw, 400px);
+    aspect-ratio: 9 / 16;
+    padding: 0;
+  }
 
   /* ── Panel: mobile ── */
   #panel {
@@ -1321,7 +1326,7 @@ body {
   }
 
   .carousel-slide img {
-    height: 100px;
+    height: 75px;
     object-fit: cover;
   }
 
@@ -1334,7 +1339,7 @@ body {
 
   /* ── Resume button — push down on mobile ── */
   #panel .resume-download-btn {
-    margin-top: 80px;
+    margin-top: 140px;
     font-size: 11px !important;
     padding: 10px 22px !important;
     letter-spacing: 0.1em !important;

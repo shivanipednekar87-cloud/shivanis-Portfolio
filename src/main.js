@@ -67,10 +67,8 @@ function initMuteButton() {
   if (!btn) return
   btn.addEventListener('click', () => {
     isMuted = !isMuted
-    // Mute all audio elements inside the Spline canvas
     const audioEls = document.querySelectorAll('audio, video')
     audioEls.forEach(el => { el.muted = isMuted })
-    // Also try via Spline app if API supports it
     if (mainApp && mainApp.setVariable) {
       try { mainApp.setVariable('muted', isMuted) } catch(e) {}
     }
@@ -280,6 +278,14 @@ function hideBlur() {
 
 // ── INSTRUCTION MODAL ─────────────────────────────────────────────────────────
 function showInstructionModal() {
+  // ── Use mobile instruction image on mobile ──
+  const card = document.getElementById('instruction-card')
+  if (card) {
+    card.style.backgroundImage = isMobile
+      ? "url('/images/Instruction-mobile.png')"
+      : "url('/images/Instruction.png')"
+  }
+
   instructionModal.classList.add('visible')
   instructionModal.setAttribute('aria-hidden', 'false')
   const bar = document.getElementById('instruction-countdown-bar')
@@ -475,10 +481,8 @@ function hideSpeechBubble() {
 }
 
 function startTipCycle() {
-  // Show first tip after 3 seconds
   bubbleTimeout = setTimeout(() => {
     showTip(getRandomTip())
-    // Show for 10s, hide for 4s, repeat
     tipInterval = setInterval(() => {
       hideSpeechBubble()
       setTimeout(() => {
@@ -486,12 +490,11 @@ function startTipCycle() {
           showTip(getRandomTip())
         }
       }, 4000)
-    }, 14000) // 10s visible + 4s hidden = 14s cycle
+    }, 14000)
   }, 3000)
 }
 
 function initProximityBubble() {
-  // Enter key opens active section
   window.addEventListener('keyup', (e) => {
     if ((e.key === 'Enter' || e.code === 'Enter') && activeBubbleSection) {
       e.preventDefault()
@@ -500,7 +503,6 @@ function initProximityBubble() {
     }
   }, true)
 
-  // Click on bubble box opens section
   document.getElementById('speech-bubble-box')?.addEventListener('click', () => {
     if (activeBubbleSection) {
       openPanel(activeBubbleSection)
@@ -658,7 +660,6 @@ function initCarousel(id, items, onClickFn) {
     cur = (i + items.length) % items.length
     slides[cur].classList.add('active')
     dots[cur].classList.add('active')
-    // Scroll the active slide into view smoothly
     slides[cur].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     if (openItem) onClickFn(cur)
   }
@@ -672,7 +673,6 @@ function initCarousel(id, items, onClickFn) {
     goTo(cur + 1)
   })
 
-  // Single click = go to that slide; double click = open
   slides.forEach((s, i) => {
     s.addEventListener('click', () => {
       if (i === cur) {
@@ -688,7 +688,6 @@ function initCarousel(id, items, onClickFn) {
     goTo(i)
   }))
 
-  // Touch/swipe support
   let touchStartX = 0
   track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX }, { passive: true })
   track.addEventListener('touchend', e => {
@@ -728,7 +727,7 @@ const sections = {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
   resume: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '30%'};">
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '40%'};">
       <a href="/images/Shivani Vinayak Pednekar_2026.pdf" target="_blank" rel="noopener noreferrer" class="resume-download-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -860,7 +859,6 @@ function sendContact() {
 }
 
 // ── SPLINE CLICK + PROXIMITY EVENTS ──────────────────────────────────────────
-// Exact Spline object names from the scene
 const SPLINE_OBJECTS = [
   { name: 'Shortfilm',  section: 'films'     },
   { name: 'About Me',   section: 'about'     },
@@ -869,12 +867,11 @@ const SPLINE_OBJECTS = [
   { name: 'Portfolio',  section: 'portfolio' },
   { name: 'Resume',     section: 'resume'    },
 ]
-const PROXIMITY_THRESHOLD = 350 // units — adjust if needed
+const PROXIMITY_THRESHOLD = 350
 let   proximityLoop        = null
 let   lastNearSection      = null
 
 function attachMainEvents() {
-  // ── Click to open panel ────────────────────────────────────────────────────
   mainApp.addEventListener('mouseDown', (e) => {
     const name = e?.target?.name?.toLowerCase() || ''
     console.log('[Spline click]', name)
@@ -886,7 +883,6 @@ function attachMainEvents() {
     else if (name.includes('resume'))                        openPanel('resume')
   })
 
-  // ── Position polling — check pig vs each section object every 200ms ────────
   function checkProximity() {
     try {
       const pig = mainApp.findObjectByName('pig')
@@ -921,9 +917,7 @@ function attachMainEvents() {
         lastNearSection = null
         hideSpeechBubble()
       }
-    } catch(err) {
-      // silently ignore if objects not found yet
-    }
+    } catch(err) {}
   }
 
   proximityLoop = setInterval(checkProximity, 200)
