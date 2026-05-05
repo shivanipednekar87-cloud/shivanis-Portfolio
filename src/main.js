@@ -278,7 +278,6 @@ function hideBlur() {
 
 // ── INSTRUCTION MODAL ─────────────────────────────────────────────────────────
 function showInstructionModal() {
-  // ── Use mobile instruction image on mobile ──
   const card = document.getElementById('instruction-card')
   if (card) {
     card.style.backgroundImage = isMobile
@@ -441,6 +440,16 @@ const films = [
   },
 ]
 
+// ── PROXIMITY MAP ─────────────────────────────────────────────────────────────
+const proximityMap = {
+  about:     { message: "Hey! Wanna know about me? Come closer!" },
+  skills:    { message: "Curious about my skills? Take a look!" },
+  portfolio: { message: "Wanna see my 3D work? Check it out!" },
+  films:     { message: "My short films are in here — come see!" },
+  resume:    { message: "Need my resume? It's right here!" },
+  contact:   { message: "Want to reach out? The phone's waiting!" },
+}
+
 // ── RANDOM ROTATING TIPS ─────────────────────────────────────────────────────
 const tips = [
   { msg: "Hey! Wanna know about me? Find this little guy in the backyard!", emoji: '🐕', section: 'about' },
@@ -522,6 +531,28 @@ function showSpeechBubble(message, section) {
   bubble.classList.add('visible')
 }
 
+// ── PORTFOLIO IMAGE LIGHTBOX ──────────────────────────────────────────────────
+// Reuses the existing #film-lightbox for portfolio images too
+let portfolioLightboxImages = []
+let portfolioLightboxCur    = 0
+
+function openPortfolioLightbox(images, startIdx) {
+  portfolioLightboxImages = images
+  portfolioLightboxCur    = startIdx
+  renderPortfolioLightbox()
+  const lb = document.getElementById('film-lightbox')
+  lb.classList.remove('hidden')
+  lb.style.display = 'flex'
+}
+
+function renderPortfolioLightbox() {
+  document.getElementById('lightbox-img').src             = portfolioLightboxImages[portfolioLightboxCur]
+  document.getElementById('lightbox-counter').textContent =
+    portfolioLightboxImages.length > 1
+      ? `${portfolioLightboxCur + 1} / ${portfolioLightboxImages.length}`
+      : ''
+}
+
 // ── FILM DETAIL ───────────────────────────────────────────────────────────────
 let curFilmDetail = 0
 
@@ -575,7 +606,7 @@ function renderFilmDetail() {
   const ctrEl   = document.getElementById('film-detail-counter'); if (ctrEl)   ctrEl.textContent   = `${curFilmDetail + 1} / ${films.length}`
 }
 
-// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+// ── LIGHTBOX (shared for films + portfolio) ───────────────────────────────────
 let lightboxImages = [], lightboxCur = 0
 
 function openLightbox(images, startIdx) {
@@ -590,10 +621,12 @@ function closeLightbox() {
   const lb = document.getElementById('film-lightbox')
   lb.classList.add('hidden')
   lb.style.display = 'none'
+  lightboxImages = []
 }
 function renderLightbox() {
   document.getElementById('lightbox-img').src             = lightboxImages[lightboxCur]
-  document.getElementById('lightbox-counter').textContent = `${lightboxCur + 1} / ${lightboxImages.length}`
+  document.getElementById('lightbox-counter').textContent =
+    lightboxImages.length > 1 ? `${lightboxCur + 1} / ${lightboxImages.length}` : ''
 }
 document.getElementById('lightbox-close')?.addEventListener('click', closeLightbox)
 document.getElementById('lightbox-prev')?.addEventListener('click', () => {
@@ -719,16 +752,28 @@ function getSectionBg(section) {
 
 const sections = {
   about:    { content: `` },
-  skills:   { content: `` },
+  // ── SKILLS: show the Tools PNG as a full image inside the panel ──
+  skills: {
+    content: `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding-top:10px;">
+      <img src="/images/Tools.png" alt="Skills & Tools"
+           style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;"
+           onerror="this.style.display='none'" />
+    </div>`
+  },
   portfolio: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`
   },
   films: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
+  // ── RESUME: download attribute + button moved up on desktop ──
   resume: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '40%'};">
-      <a href="/images/Shivani Vinayak Pednekar_2026.pdf" target="_blank" rel="noopener noreferrer" class="resume-download-btn">
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '22%'};">
+      <a href="/images/Shivani Vinayak Pednekar_2026.pdf"
+         download="Shivani_Pednekar_Resume.pdf"
+         target="_blank"
+         rel="noopener noreferrer"
+         class="resume-download-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5">
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
           <polyline points="15 3 21 3 21 9"/>
@@ -772,8 +817,16 @@ function openPanel(section) {
   panel.classList.remove('hidden')
   panel.style.display = 'block'
   showBlur()
-  if (section === 'portfolio') initCarousel('carousel-3d',    projects3D, (i) => open3DProject(projects3D[i].id))
-  if (section === 'films')     initCarousel('carousel-films', films,      (i) => openFilmDetail(i))
+
+  if (section === 'portfolio') {
+    initCarousel('carousel-3d', projects3D, (i) => {
+      // ── Click on active slide → open full-size image lightbox ──
+      openLightbox([projects3D[i].image], 0)
+    })
+  }
+  if (section === 'films') {
+    initCarousel('carousel-films', films, (i) => openFilmDetail(i))
+  }
 }
 
 function closePanel() {
@@ -809,19 +862,13 @@ document.querySelectorAll('.mobile-nav-item[data-section]').forEach(btn => {
 })
 
 // ── 3D PROJECT OVERLAY ────────────────────────────────────────────────────────
+// (kept for backwards compat but portfolio now uses lightbox directly)
 let curProj = 0
 
 function open3DProject(id) {
   curProj = projects3D.findIndex(p => p.id === id)
-  renderProj()
-  const overlay = document.getElementById('project-overlay')
-  overlay.style.backgroundImage = "url('/images/Portfolio BG.png')"
-  overlay.classList.remove('hidden')
-  overlay.style.display = 'flex'
-  const panel = document.getElementById('panel')
-  panel.classList.add('hidden')
-  panel.style.display = 'none'
-  showBlur()
+  // Open image in lightbox instead of the old overlay
+  openLightbox([projects3D[curProj].image], 0)
 }
 
 function renderProj() {
@@ -875,12 +922,12 @@ function attachMainEvents() {
   mainApp.addEventListener('mouseDown', (e) => {
     const name = e?.target?.name?.toLowerCase() || ''
     console.log('[Spline click]', name)
-    if (name.includes('about'))                              openPanel('about')
-    else if (name.includes('skill'))                         openPanel('skills')
+    if (name.includes('about'))                               openPanel('about')
+    else if (name.includes('skill'))                          openPanel('skills')
     else if (name.includes('short') || name.includes('film')) openPanel('films')
-    else if (name.includes('contact'))                       openPanel('contact')
-    else if (name.includes('portfolio'))                     openPanel('portfolio')
-    else if (name.includes('resume'))                        openPanel('resume')
+    else if (name.includes('contact'))                        openPanel('contact')
+    else if (name.includes('portfolio'))                      openPanel('portfolio')
+    else if (name.includes('resume'))                         openPanel('resume')
   })
 
   function checkProximity() {
