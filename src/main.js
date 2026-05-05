@@ -753,9 +753,9 @@ function getSectionBg(section) {
 const sections = {
   about:    { content: `` },
   skills: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;margin-top:10px;">
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;margin-top:${isMobile ? '10px' : '-5%'};">
       <img src="/images/Tools.png" alt="Skills"
-        style="width:86%;object-fit:contain;display:block;" />
+        style="width:${isMobile ? '100%' : '110%'};max-width:none;object-fit:contain;display:block;margin-left:${isMobile ? '0' : '-5%'};" />
     </div>`
   },
   portfolio: {
