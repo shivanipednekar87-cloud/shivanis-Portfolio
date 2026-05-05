@@ -752,25 +752,17 @@ function getSectionBg(section) {
 
 const sections = {
   about:    { content: `` },
-  // ── SKILLS: show the Tools PNG as a full image inside the panel ──
-  skills: {
-    content: `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding-top:10px;">
-      <img src="/images/Tools.png" alt="Skills & Tools"
-           style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;"
-           onerror="this.style.display='none'" />
-    </div>`
-  },
+  skills: { content: `` },
   portfolio: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`
   },
   films: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
-  // ── RESUME: download attribute + button moved up on desktop ──
+  // ── RESUME: opens in new tab, correct filename, button position ──
   resume: {
-    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '22%'};">
-      <a href="/images/Shivani Vinayak Pednekar_2026.pdf"
-         download="Shivani_Pednekar_Resume.pdf"
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '27%'};">
+      <a href="/images/shivani-vinayak-pednekar-2026.pdf"
          target="_blank"
          rel="noopener noreferrer"
          class="resume-download-btn">
