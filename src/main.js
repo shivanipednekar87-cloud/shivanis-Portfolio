@@ -752,14 +752,18 @@ function getSectionBg(section) {
 
 const sections = {
   about:    { content: `` },
-  skills: { content: `` },
+  skills: {
+    content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;margin-top:10px;">
+      <img src="/images/Tools.png" alt="Skills"
+        style="width:86%;object-fit:contain;display:block;" />
+    </div>`
+  },
   portfolio: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(projects3D, 'carousel-3d')}</div>`
   },
   films: {
     content: `<div style="width:100%;display:flex;flex-direction:column;align-items:center;padding-top:10px;">${makeCarousel(films, 'carousel-films')}</div>`
   },
-  // ── RESUME: opens in new tab, correct filename, button position ──
   resume: {
     content: `<div style="width:100%;display:flex;align-items:center;justify-content:center;padding-top:${window.innerWidth < 900 ? '20px' : '27%'};">
       <a href="/images/shivani-vinayak-pednekar-2026.pdf"
